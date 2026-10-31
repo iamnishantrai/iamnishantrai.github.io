@@ -1,0 +1,2360 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How Netflix Works — A Comic Guide by Nishant Rai</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:ital,wght@0,400;0,700;1,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #18181b;
+      --paper: #fffdf7;
+      --netflix-red: #e50914;
+      --comic-yellow: #ffd166;
+      --comic-blue: #4cc9f0;
+      --comic-green: #06d6a0;
+      --comic-purple: #8338ec;
+      --comic-orange: #fb5607;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fef9ef;
+      color: #18181b;
+      background-image: radial-gradient(#e5dec9 1.25px, transparent 1.25px);
+      background-size: 22px 22px;
+      overflow-x: hidden;
+    }
+    .font-comic-title {
+      font-family: 'Bangers', cursive;
+      letter-spacing: 0.04em;
+    }
+    .font-comic-speech {
+      font-family: 'Comic Neue', cursive;
+      font-weight: 700;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* HowDNS.works signature comic borders & shadows */
+    .comic-box {
+      border: 3.5px solid #18181b;
+      box-shadow: 6px 6px 0px #18181b;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .comic-box-sm {
+      border: 2.5px solid #18181b;
+      box-shadow: 4px 4px 0px #18181b;
+    }
+    .comic-btn {
+      border: 3px solid #18181b;
+      box-shadow: 4px 4px 0px #18181b;
+      transition: all 0.12s ease;
+    }
+    .comic-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px #18181b;
+    }
+    .comic-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0px #18181b;
+    }
+    /* Halftone overlay inside comic panels */
+    .halftone-bg {
+      background-image: radial-gradient(rgba(24, 24, 27, 0.10) 1.5px, transparent 1.5px);
+      background-size: 12px 12px;
+    }
+    /* Speech bubbles with crisp borders */
+    .speech-bubble {
+      position: relative;
+      background: #ffffff;
+      border: 3px solid #18181b;
+      border-radius: 18px;
+      padding: 12px 16px;
+      box-shadow: 3px 3px 0px rgba(24,24,27,0.9);
+      font-family: 'Comic Neue', cursive;
+      font-weight: 700;
+      font-size: 1.03rem;
+      line-height: 1.35;
+      color: #18181b;
+    }
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -13px;
+      left: 28px;
+      border-width: 13px 10px 0;
+      border-style: solid;
+      border-color: #18181b transparent;
+      display: block;
+      width: 0;
+    }
+    .speech-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 30px;
+      border-width: 10px 8px 0;
+      border-style: solid;
+      border-color: #ffffff transparent;
+      display: block;
+      width: 0;
+      z-index: 1;
+    }
+    .speech-bubble.tail-right::after {
+      left: auto;
+      right: 28px;
+    }
+    .speech-bubble.tail-right::before {
+      left: auto;
+      right: 30px;
+    }
+    /* Caption rectangles like howdns.works */
+    .narrator-box {
+      border: 3px solid #18181b;
+      padding: 6px 12px;
+      font-weight: 800;
+      font-size: 0.86rem;
+      letter-spacing: 0.01em;
+      box-shadow: 3px 3px 0px #18181b;
+    }
+    .sfx-badge {
+      font-family: 'Bangers', cursive;
+      letter-spacing: 0.06em;
+      border: 2.5px solid #18181b;
+      box-shadow: 3px 3px 0px #18181b;
+      transform: rotate(-4deg);
+      display: inline-block;
+    }
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+    }
+    .animate-float {
+      animation: floatSlow 3.2s ease-in-out infinite;
+    }
+    @keyframes pulsePop {
+      0%, 100% { transform: scale(1) rotate(-4deg); }
+      50% { transform: scale(1.07) rotate(-2deg); }
+    }
+    .animate-sfx {
+      animation: pulsePop 2.2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- TOP RIBBON (Direct homage to howdns.works top bar) -->
+  <header class="sticky top-0 z-40 bg-[#18181b] text-white border-b-4 border-[#e50914] shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <button id="brandHomeBtn" onclick="switchMainView('comic'); selectEpisode(0);" class="flex items-center gap-2 text-left group">
+          <span class="bg-[#e50914] text-white font-comic-title text-xl px-2.5 py-0.5 rounded border-2 border-white shadow-[2px_2px_0px_#fff] group-hover:scale-105 transition-transform">N</span>
+          <div>
+            <span class="font-comic-title text-xl tracking-wider text-white">HOW NETFLIX WORKS</span>
+            <span class="hidden sm:inline-block ml-2 text-xs bg-amber-300 text-zinc-900 font-bold px-2 py-0.5 rounded border border-zinc-900">Comic Edition</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Navigation Pills -->
+      <nav class="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-bold">
+        <button id="navCoverBtn" onclick="switchMainView('comic'); selectEpisode(0);" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-zinc-600 transition">
+          🏠 Cover
+        </button>
+        <button id="navEpisodesBtn" onclick="toggleEpisodesDrawer()" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-600 transition flex items-center gap-1">
+          📚 Episodes <span id="currentEpBadge" class="bg-[#e50914] text-white px-1.5 py-0.2 rounded text-xs">Cover</span>
+        </button>
+        <button id="navReadAllBtn" onclick="enableReadAllMode()" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-emerald-300 border border-zinc-600 transition">
+          📜 Read All (Webtoon)
+        </button>
+        <button id="navNerdNotesBtn" onclick="toggleNerdMode()" class="px-3 py-1.5 rounded bg-amber-300 text-zinc-900 hover:bg-amber-200 border-2 border-zinc-900 transition">
+          🤓 Director's Notes: <span id="nerdModeLabel">ON</span>
+        </button>
+        <button id="navGithubBtn" onclick="switchMainView('github')" class="px-3 py-1.5 rounded bg-[#e50914] hover:bg-red-600 text-white border-2 border-white shadow-[2px_2px_0px_#fff] transition">
+          🚀 Host on GitHub Pages
+        </button>
+      </nav>
+    </div>
+
+    <!-- Collapsible All-Episodes Quick Bar (like howdns.works/episodes/) -->
+    <div id="episodesDrawer" class="hidden bg-zinc-900 border-t-2 border-zinc-700 px-4 py-3">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs uppercase tracking-wider text-amber-300 font-bold">Jump Straight to Any Episode:</span>
+          <button id="closeDrawerBtn" onclick="toggleEpisodesDrawer()" class="text-xs text-zinc-400 hover:text-white">✕ Close</button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2" id="drawerEpisodeGrid"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-6 sm:py-8">
+
+    <!-- ==================== VIEW 1: COMIC READER VIEW ==================== -->
+    <div id="viewComic" class="space-y-8">
+
+      <!-- COVER / HERO SPLASH (Shown when on Cover or at top) -->
+      <section id="coverHeroSection" class="comic-box bg-gradient-to-br from-[#ffd166] via-[#ffe6a7] to-[#4cc9f0] rounded-2xl p-6 sm:p-10 relative overflow-hidden">
+        <div class="halftone-bg absolute inset-0 pointer-events-none"></div>
+        <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div class="lg:col-span-7 space-y-4">
+            <div class="inline-flex items-center gap-2 bg-zinc-900 text-amber-300 text-xs font-extrabold px-3 py-1.5 rounded-full border-2 border-zinc-900 shadow-[3px_3px_0px_#e50914]">
+              <span>🍿 INSPIRED BY HOWDNS.WORKS</span>
+              <span>•</span>
+              <span>ZERO JARGON</span>
+            </div>
+            <h1 class="font-comic-title text-5xl sm:text-7xl text-zinc-900 leading-none drop-shadow-[3px_3px_0px_#ffffff]">
+              HOW <span class="text-[#e50914]">NETFLIX</span> WORKS.
+            </h1>
+            <p class="text-lg sm:text-xl font-extrabold text-zinc-900 leading-snug">
+              A fun, colorful comic strip explaining what actually happens in the 200 milliseconds after you press <span class="bg-[#e50914] text-white px-2 py-0.5 rounded border-2 border-zinc-900">▶ PLAY</span>.
+            </p>
+            <p class="text-sm sm:text-base text-zinc-800 font-medium bg-white/85 p-4 rounded-xl border-2 border-zinc-900 shadow-[4px_4px_0px_#18181b]">
+              Hey there! 👋 Have you ever wondered how <strong>280+ million subscribers</strong> press Play at 8:00 PM on Friday night and watch crisp 4K movies without melting the global internet? We made this interactive webcomic to explain the entire magic trick from scratch—using a hotel front desk, a 2:00 AM secret mini-fridge, a Hollywood food processor, and a wrench-wielding monkey. <strong>Enjoy! No jetpacks (or buffering) required.</strong>
+            </p>
+
+            <div class="flex flex-wrap items-center gap-3 pt-2">
+              <button id="heroStartEp1Btn" onclick="selectEpisode(1)" class="comic-btn bg-[#e50914] hover:bg-red-600 text-white font-comic-title text-2xl px-7 py-3 rounded-xl flex items-center gap-2">
+                ▶ Start Reading Episode 1
+              </button>
+              <button id="heroReadAllBtn" onclick="enableReadAllMode()" class="comic-btn bg-white hover:bg-amber-100 text-zinc-900 font-extrabold text-sm sm:text-base px-5 py-3 rounded-xl">
+                📜 Read All 7 Episodes on One Page
+              </button>
+            </div>
+
+            <div class="pt-2 flex flex-wrap items-center gap-4 text-xs font-bold text-zinc-800">
+              <span class="bg-white/90 px-3 py-1.5 rounded-lg border-2 border-zinc-900">🎨 Handmade by <strong class="text-[#e50914]" id="authorHeroName">Nishant Rai</strong></span>
+              <span class="bg-white/90 px-3 py-1.5 rounded-lg border-2 border-zinc-900">🕹️ 7 Interactive Mini-Labs Inside</span>
+              <span class="bg-white/90 px-3 py-1.5 rounded-lg border-2 border-zinc-900">💡 Hover/Tap Panels for Nerd Notes</span>
+            </div>
+          </div>
+
+          <!-- Comic Cast Showcase Illustration -->
+          <div class="lg:col-span-5">
+            <div class="comic-box bg-zinc-900 text-white rounded-2xl p-4 sm:p-5 relative">
+              <div class="sfx-badge bg-[#e50914] text-white text-sm px-3 py-1 rounded absolute -top-3 -right-2 z-20">
+                MEET THE CAST!
+              </div>
+              <div class="grid grid-cols-2 gap-3 text-center">
+                <!-- Cast 1 -->
+                <div class="bg-[#ffd166] text-zinc-900 p-3 rounded-xl border-2 border-white">
+                  <svg viewBox="0 0 90 70" class="w-16 h-14 mx-auto">
+                    <rect x="10" y="45" width="70" height="20" rx="6" fill="#e50914" stroke="#18181b" stroke-width="3"/>
+                    <circle cx="45" cy="26" r="15" fill="#ffcdb2" stroke="#18181b" stroke-width="3"/>
+                    <path d="M32 20 Q45 8 58 20" fill="#18181b"/>
+                    <circle cx="40" cy="25" r="2.5" fill="#18181b"/>
+                    <circle cx="50" cy="25" r="2.5" fill="#18181b"/>
+                    <path d="M39 32 Q45 37 51 32" fill="none" stroke="#18181b" stroke-width="2.5" stroke-linecap="round"/>
+                    <rect x="58" y="36" width="16" height="10" rx="2" fill="#18181b"/>
+                    <circle cx="66" cy="41" r="2.5" fill="#e50914"/>
+                  </svg>
+                  <div class="font-comic-title text-base mt-1">1. YOU & TV BUTLER</div>
+                  <div class="text-[11px] font-bold text-zinc-800">The Couch & Smart Player</div>
+                </div>
+                <!-- Cast 2 -->
+                <div class="bg-[#4cc9f0] text-zinc-900 p-3 rounded-xl border-2 border-white">
+                  <svg viewBox="0 0 90 70" class="w-16 h-14 mx-auto">
+                    <path d="M22 48 Q12 48 12 37 Q12 27 23 26 Q28 13 44 13 Q60 13 64 26 Q76 27 76 37 Q76 48 65 48 Z" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+                    <rect x="33" y="48" width="24" height="14" rx="3" fill="#ff9f1c" stroke="#18181b" stroke-width="2.5"/>
+                    <circle cx="38" cy="32" r="2.5" fill="#18181b"/>
+                    <circle cx="50" cy="32" r="2.5" fill="#18181b"/>
+                    <path d="M38 39 Q44 43 50 39" fill="none" stroke="#18181b" stroke-width="2.5"/>
+                  </svg>
+                  <div class="font-comic-title text-base mt-1">2. AWS CLOUD</div>
+                  <div class="text-[11px] font-bold text-zinc-800">"The Hotel Front Desk"</div>
+                </div>
+                <!-- Cast 3 -->
+                <div class="bg-[#06d6a0] text-zinc-900 p-3 rounded-xl border-2 border-white">
+                  <svg viewBox="0 0 90 70" class="w-16 h-14 mx-auto">
+                    <rect x="24" y="14" width="42" height="48" rx="6" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+                    <path d="M28 14 Q45 2 62 14" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+                    <rect x="31" y="26" width="28" height="22" rx="3" fill="#ffcdb2" stroke="#18181b" stroke-width="2.5"/>
+                    <circle cx="39" cy="36" r="2.5" fill="#18181b"/>
+                    <circle cx="51" cy="36" r="2.5" fill="#18181b"/>
+                    <path d="M35 55 L55 55" stroke="#e50914" stroke-width="4" stroke-linecap="round"/>
+                  </svg>
+                  <div class="font-comic-title text-base mt-1">3. CHEF ENCODER</div>
+                  <div class="text-[11px] font-bold text-zinc-800">Chops Movies into 2s Bites</div>
+                </div>
+                <!-- Cast 4 -->
+                <div class="bg-[#ffadad] text-zinc-900 p-3 rounded-xl border-2 border-white">
+                  <svg viewBox="0 0 90 70" class="w-16 h-14 mx-auto">
+                    <rect x="18" y="14" width="54" height="44" rx="6" fill="#e50914" stroke="#18181b" stroke-width="3"/>
+                    <rect x="24" y="21" width="42" height="10" rx="2" fill="#18181b"/>
+                    <circle cx="30" cy="26" r="2.5" fill="#06d6a0"/>
+                    <circle cx="38" cy="26" r="2.5" fill="#06d6a0"/>
+                    <circle cx="46" cy="26" r="2.5" fill="#ffd166"/>
+                    <circle cx="36" cy="43" r="3" fill="#ffffff"/>
+                    <circle cx="54" cy="43" r="3" fill="#ffffff"/>
+                    <path d="M38 50 Q45 55 52 50" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+                  </svg>
+                  <div class="font-comic-title text-base mt-1">4. OPEN CONNECT BOX</div>
+                  <div class="text-[11px] font-bold text-zinc-800">Lives Inside Your Local ISP!</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EPISODE CARDS TABLE OF CONTENTS (Just like howdns.works/episodes/) -->
+        <div class="relative z-10 mt-8 pt-6 border-t-4 border-zinc-900">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <h2 class="font-comic-title text-2xl sm:text-3xl text-zinc-900">
+              📺 PICK AN EPISODE TO START YOUR JOURNEY:
+            </h2>
+            <span class="text-xs font-extrabold uppercase bg-zinc-900 text-white px-3 py-1 rounded-full">
+              6 Core Episodes + 1 Chaos Bonus
+            </span>
+          </div>
+          <div id="coverEpisodeCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"></div>
+        </div>
+      </section>
+
+      <!-- EPISODE PROGRESS PILL BAR -->
+      <div class="comic-box bg-white rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-1.5" id="episodePillBar"></div>
+        <div class="flex items-center gap-2 text-xs font-bold text-zinc-700">
+          <span id="readingModeStatus" class="bg-zinc-100 px-2.5 py-1 rounded border border-zinc-300">Single Episode Mode</span>
+        </div>
+      </div>
+
+      <!-- DYNAMIC COMIC EPISODES CONTAINER -->
+      <div id="comicEpisodesContainer" class="space-y-12"></div>
+
+      <!-- BOTTOM EPISODE PAGER (Next / Prev Episode like howdns.works) -->
+      <div id="episodeBottomPager" class="comic-box bg-zinc-900 text-white rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <button id="prevEpBtn" onclick="stepEpisode(-1)" class="comic-btn bg-zinc-800 hover:bg-zinc-700 text-white font-comic-title text-xl px-5 py-2.5 rounded-xl border-2 border-white">
+          ← Previous Episode
+        </button>
+        <div class="text-center">
+          <div id="pagerEpTitle" class="font-comic-title text-2xl text-amber-300">Episode 1</div>
+          <div id="pagerEpTeaser" class="text-xs sm:text-sm text-zinc-300 mt-0.5">Ready for the next chapter of the packet adventure?</div>
+        </div>
+        <button id="nextEpBtn" onclick="stepEpisode(1)" class="comic-btn bg-[#e50914] hover:bg-red-600 text-white font-comic-title text-2xl px-6 py-2.5 rounded-xl border-2 border-white">
+          Next Episode →
+        </button>
+      </div>
+
+      <!-- QUICK ARCHITECTURE CHEAT-SHEET & VERIFIED SOURCES SECTION -->
+      <section id="architectureReferenceSection" class="comic-box bg-white rounded-2xl p-6 sm:p-8 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b-4 border-zinc-900 pb-4">
+          <div>
+            <span class="text-xs font-extrabold uppercase tracking-wider bg-[#e50914] text-white px-2.5 py-1 rounded">Layman-to-Engineer Translator</span>
+            <h2 class="font-comic-title text-3xl sm:text-4xl text-zinc-900 mt-1">
+              THE COMPLETE NETFLIX CHEAT SHEET (FROM COUCH TO CLOUD)
+            </h2>
+          </div>
+          <button id="openQuizBtn" onclick="scrollToQuiz()" class="comic-btn bg-[#ffd166] hover:bg-amber-300 text-zinc-900 font-extrabold text-sm px-4 py-2 rounded-xl">
+            🏆 Take the 4-Question Comic Quiz
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse border-2 border-zinc-900 text-sm">
+            <thead>
+              <tr class="bg-zinc-900 text-white">
+                <th class="p-3 border-2 border-zinc-900 font-comic-title text-lg tracking-wide">Comic Character</th>
+                <th class="p-3 border-2 border-zinc-900 font-comic-title text-lg tracking-wide">Everyday Layman Metaphor</th>
+                <th class="p-3 border-2 border-zinc-900 font-comic-title text-lg tracking-wide">Real Netflix System</th>
+                <th class="p-3 border-2 border-zinc-900 font-comic-title text-lg tracking-wide">Why It Matters</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y-2 divide-zinc-900 font-medium">
+              <tr class="bg-amber-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">🏨 AWS Concierge</td>
+                <td class="p-3 border-2 border-zinc-900">The Hotel Front Desk (check-in, room keys, menu recommendations)</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">Control Plane (AWS Microservices, Zuul API Gateway, Cassandra/EVCache)</td>
+                <td class="p-3 border-2 border-zinc-900">Handles login, search, billing, personalized artwork, and returns the Manifest file—never streams heavy video bytes.</td>
+              </tr>
+              <tr class="bg-red-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">🧊 Local OCA Red Box</td>
+                <td class="p-3 border-2 border-zinc-900">The Guest Room Mini-Fridge (stocked right next to your couch)</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">Data Plane (Open Connect CDN & Open Connect Appliances inside ISPs)</td>
+                <td class="p-3 border-2 border-zinc-900">Physical storage servers installed free inside ISP data centers & IXPs, serving ~70%+ of video traffic locally.</td>
+              </tr>
+              <tr class="bg-emerald-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">👨‍🍳 Chef Encoder & VMAF</td>
+                <td class="p-3 border-2 border-zinc-900">The Meal-Prepper who slices a giant cake into 2-second bite-sized boxes</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">Per-Title Encoding Pipeline (HLS/DASH 2–4s segments + VMAF quality metric)</td>
+                <td class="p-3 border-2 border-zinc-900">Cuts bandwidth by up to 40% without losing visual sharpness and enables instant quality switching between segments.</td>
+              </tr>
+              <tr class="bg-sky-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">🌙 2:00 AM Night Owl</td>
+                <td class="p-3 border-2 border-zinc-900">Restocking the mini-fridge overnight while highways are empty</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">Predictive Off-Peak Pre-Positioning (ML Demand Forecasting)</td>
+                <td class="p-3 border-2 border-zinc-900">Pushes predicted popular shows to local ISP OCA boxes at 2 AM so 8 PM prime time doesn't clog backbone links.</td>
+              </tr>
+              <tr class="bg-purple-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">🎧 Smart TV Butler</td>
+                <td class="p-3 border-2 border-zinc-900">A DJ adjusting the music volume smoothly when the room gets noisy</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">Client-Side Adaptive Bitrate (ABR) Algorithm</td>
+                <td class="p-3 border-2 border-zinc-900">Your device—not the server—picks every 2–4s chunk's resolution in real time based on live Wi-Fi speed and buffer health.</td>
+              </tr>
+              <tr class="bg-orange-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">🐒 Chaos Monkey</td>
+                <td class="p-3 border-2 border-zinc-900">Fire drills during the workday so nobody panics in a real emergency</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">Simian Army / Chaos Engineering & Multi-Region Active-Active Failover</td>
+                <td class="p-3 border-2 border-zinc-900">Deliberately terminates production instances so engineers build resilient fallbacks that keep streams alive.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Interactive 4-Question Mini Quiz -->
+        <div id="comicQuizBox" class="comic-box-sm bg-[#fff8e6] rounded-xl p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="font-comic-title text-2xl text-zinc-900">🎓 POP QUIZ: TEST YOUR NETFLIX SUPERPOWERS!</h3>
+              <p class="text-xs font-bold text-zinc-600">Click an answer on each question to see if you've mastered how Netflix works:</p>
+            </div>
+            <div class="bg-zinc-900 text-amber-300 font-mono-code text-xs px-3 py-1.5 rounded-lg">
+              Score: <span id="quizScoreDisplay">0 / 4</span>
+            </div>
+          </div>
+          <div id="quizQuestionsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+
+        <!-- Further Reading & Sources -->
+        <div class="bg-zinc-100 rounded-xl p-4 border-2 border-zinc-900 text-xs space-y-2">
+          <div class="font-extrabold text-zinc-900 uppercase tracking-wider">📚 Inspiration & Further Engineering Reading:</div>
+          <div class="flex flex-wrap gap-3">
+            <a href="https://howdns.works/" target="_blank" rel="noopener noreferrer" class="underline font-bold text-blue-700 hover:text-red-600">How DNS Works Comic (DNSimple) ↗</a>
+            <span>•</span>
+            <a href="https://dev.to/doogal/how-netflix-architecture-works-aws-open-connect-cdn-477a" target="_blank" rel="noopener noreferrer" class="underline font-bold text-blue-700 hover:text-red-600">How Netflix Architecture Works: AWS & Open Connect CDN ↗</a>
+            <span>•</span>
+            <a href="https://singhajit.com/netflix-video-processing-pipeline/" target="_blank" rel="noopener noreferrer" class="underline font-bold text-blue-700 hover:text-red-600">Netflix Video Processing Pipeline (VMAF & ABR) ↗</a>
+            <span>•</span>
+            <a href="https://medium.com/@ismailkovvuru/how-netflix-designs-systems-for-binge-watching-system-design-explained-d1a6ffbc4e29" target="_blank" rel="noopener noreferrer" class="underline font-bold text-blue-700 hover:text-red-600">How Netflix Designs Systems for Binge-Watching ↗</a>
+            <span>•</span>
+            <a href="https://vickybytes.com/blog/netflix-software-architecture" target="_blank" rel="noopener noreferrer" class="underline font-bold text-blue-700 hover:text-red-600">Netflix Software Architecture Explained (VickyBytes) ↗</a>
+            <span>•</span>
+            <a href="https://netflixtechblog.com/netflix-live-origin-41f1b0ad5371" target="_blank" rel="noopener noreferrer" class="underline font-bold text-blue-700 hover:text-red-600">Netflix TechBlog ↗</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================== VIEW 2: GITHUB PAGES DEPLOYMENT STUDIO ==================== -->
+    <div id="viewGithub" class="hidden space-y-6">
+      <section class="comic-box bg-white rounded-2xl p-6 sm:p-8 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b-4 border-zinc-900 pb-4">
+          <div>
+            <span class="bg-[#e50914] text-white text-xs font-extrabold px-3 py-1 rounded uppercase">Personal Hosting Kit</span>
+            <h2 class="font-comic-title text-4xl text-zinc-900 mt-1">
+              🚀 HOST THIS COMIC ON GITHUB PAGES UNDER YOUR NAME
+            </h2>
+            <p class="text-sm text-zinc-700 font-medium">
+              Everything is pre-configured for <strong class="text-zinc-900">Nishant Rai</strong>. Because this comic website is built as a <strong>100% self-contained single HTML file</strong> with inline SVG vector comics, hosting it on GitHub Pages takes less than 60 seconds!
+            </p>
+          </div>
+          <button id="backToComicBtn" onclick="switchMainView('comic')" class="comic-btn bg-[#ffd166] hover:bg-amber-300 text-zinc-900 font-comic-title text-xl px-5 py-2.5 rounded-xl">
+            ← Back to Comic Strip
+          </button>
+        </div>
+
+        <!-- Customizer Form for Author Name & GitHub Username -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-amber-50 p-4 rounded-xl border-2 border-zinc-900">
+          <div>
+            <label for="inputAuthorName" class="block text-xs font-extrabold uppercase text-zinc-800 mb-1">Your Display Name (on Cover & Footer)</label>
+            <input id="inputAuthorName" type="text" value="Nishant Rai" oninput="updateGithubConfig()" class="w-full px-3 py-2 rounded-lg border-2 border-zinc-900 font-bold text-sm bg-white" />
+          </div>
+          <div>
+            <label for="inputGithubUser" class="block text-xs font-extrabold uppercase text-zinc-800 mb-1">Your GitHub Username</label>
+            <input id="inputGithubUser" type="text" value="nishantrai" oninput="updateGithubConfig()" class="w-full px-3 py-2 rounded-lg border-2 border-zinc-900 font-mono-code text-sm bg-white" />
+          </div>
+          <div>
+            <label for="inputRepoName" class="block text-xs font-extrabold uppercase text-zinc-800 mb-1">Repository Name</label>
+            <input id="inputRepoName" type="text" value="how-netflix-works" oninput="updateGithubConfig()" class="w-full px-3 py-2 rounded-lg border-2 border-zinc-900 font-mono-code text-sm bg-white" />
+          </div>
+        </div>
+
+        <!-- Live URL Preview Banner -->
+        <div class="bg-zinc-900 text-white p-4 rounded-xl border-2 border-zinc-900 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div class="text-xs text-amber-300 font-bold uppercase">Your Live GitHub Pages URL Will Be:</div>
+            <div id="livePagesUrlPreview" class="font-mono-code text-base sm:text-lg text-emerald-400 font-bold break-all">
+              https://nishantrai.github.io/how-netflix-works/
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="downloadIndexBtn" onclick="downloadStandaloneIndexHtml()" class="comic-btn bg-[#06d6a0] hover:bg-emerald-400 text-zinc-900 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl border-2 border-white">
+              ⬇️ Download Ready `index.html`
+            </button>
+            <button id="downloadReadmeBtn" onclick="downloadReadmeMd()" class="comic-btn bg-[#4cc9f0] hover:bg-sky-300 text-zinc-900 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl border-2 border-white">
+              ⬇️ Download `README.md`
+            </button>
+          </div>
+        </div>
+
+        <!-- Two Hosting Paths -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Option A: No-Code Web Upload -->
+          <div class="comic-box-sm bg-emerald-50 rounded-xl p-5 space-y-3">
+            <div class="inline-block bg-zinc-900 text-emerald-300 text-xs font-extrabold px-2.5 py-1 rounded">
+              EASIEST • 60 SECONDS IN BROWSER
+            </div>
+            <h3 class="font-comic-title text-2xl text-zinc-900">Option A: Drag & Drop on GitHub.com</h3>
+            <ol class="list-decimal list-inside space-y-2 text-sm font-medium text-zinc-800">
+              <li>Click <strong>"⬇️ Download Ready `index.html`"</strong> above (it automatically stamps your name and settings into the file).</li>
+              <li>Go to <a href="https://github.com/new" target="_blank" rel="noopener noreferrer" class="underline font-bold text-blue-700">github.com/new ↗</a> and create a <strong>Public</strong> repository named <code id="stepRepoName1" class="font-mono-code bg-white px-1.5 py-0.5 rounded border border-zinc-400">how-netflix-works</code>.</li>
+              <li>Click <strong>"uploading an existing file"</strong> on the repo setup screen, drag in your downloaded <code class="font-mono-code bg-white px-1.5 py-0.5 rounded border border-zinc-400">index.html</code> (and optional <code class="font-mono-code bg-white px-1.5 py-0.5 rounded border border-zinc-400">README.md</code>), and click <strong>Commit changes</strong>.</li>
+              <li>In your repo, go to <strong>Settings → Pages</strong> (left sidebar).</li>
+              <li>Under <strong>Build and deployment → Branch</strong>, select <code class="font-mono-code bg-white px-1.5 py-0.5 rounded border border-zinc-400">main</code> and folder <code class="font-mono-code bg-white px-1.5 py-0.5 rounded border border-zinc-400">/ (root)</code>, then click <strong>Save</strong>.</li>
+              <li>Wait ~45 seconds and visit your live comic site! 🎉</li>
+            </ol>
+          </div>
+
+          <!-- Option B: Terminal CLI -->
+          <div class="comic-box-sm bg-zinc-900 text-white rounded-xl p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="bg-[#e50914] text-white text-xs font-extrabold px-2.5 py-1 rounded">
+                DEVELOPER WORKFLOW • GIT CLI
+              </span>
+              <button id="copyGitCmdsBtn" onclick="copyGitCommands()" class="text-xs bg-amber-300 hover:bg-amber-200 text-zinc-900 font-extrabold px-3 py-1 rounded border border-zinc-900">
+                📋 Copy Commands
+              </button>
+            </div>
+            <h3 class="font-comic-title text-2xl text-amber-300">Option B: Push From Your Terminal</h3>
+            <pre id="gitCommandsBlock" class="font-mono-code text-xs bg-zinc-950 text-emerald-300 p-4 rounded-lg overflow-x-auto border border-zinc-700 leading-relaxed">mkdir how-netflix-works && cd how-netflix-works
+# Move your downloaded index.html & README.md here
+git init
+git branch -M main
+git add index.html README.md
+git commit -m "Launch How Netflix Works interactive comic by Nishant Rai"
+git remote add origin https://github.com/nishantrai/how-netflix-works.git
+git push -u origin main</pre>
+            <p class="text-xs text-zinc-300">
+              💡 <strong>Want it at your root domain</strong> (<code id="rootDomainHint" class="text-amber-300">https://nishantrai.github.io/</code>)? Just name the repository <code id="rootRepoHint" class="text-amber-300">nishantrai.github.io</code> instead!
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- FOOTER (Direct homage to howdns.works "Handmade by..." footer) -->
+  <footer class="bg-[#18181b] text-white border-t-4 border-zinc-900 mt-12 py-8 px-4">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <div class="bg-[#e50914] text-white font-comic-title text-2xl px-3 py-1 rounded border-2 border-white">N</div>
+        <div>
+          <div class="font-comic-title text-xl tracking-wide text-amber-300">
+            HANDMADE BY <span id="footerAuthorName">NISHANT RAI</span>
+          </div>
+          <div class="text-xs text-zinc-400">
+            Visual layout & storytelling homage to <a href="https://howdns.works/" target="_blank" rel="noopener noreferrer" class="underline text-amber-200 hover:text-white">howdns.works</a> • Built for GitHub Pages
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
+        <button id="footerCoverBtn" onclick="switchMainView('comic'); selectEpisode(0);" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-600">
+          Cover
+        </button>
+        <button id="footerReadAllBtn" onclick="enableReadAllMode()" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-emerald-300 border border-zinc-600">
+          All Episodes
+        </button>
+        <button id="footerHostBtn" onclick="switchMainView('github')" class="px-3 py-1.5 rounded bg-[#e50914] hover:bg-red-600 text-white border border-white">
+          🚀 Deploy on GitHub Pages
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- IN-PAGE TOAST NOTIFICATION -->
+  <div id="comicToast" class="fixed bottom-5 right-5 z-50 hidden comic-box bg-zinc-900 text-white px-4 py-3 rounded-xl flex items-center gap-3 max-w-sm">
+    <span class="text-xl" id="comicToastIcon">🍿</span>
+    <span class="text-xs sm:text-sm font-bold" id="comicToastText">Ready!</span>
+  </div>
+
+  <script>
+    // =========================================================================
+    // STATE & EPISODE DATA (6 Core Episodes + 1 Bonus Episode = 7 Episodes)
+    // =========================================================================
+    let currentView = 'comic'; // 'comic' | 'github'
+    let currentEpisode = 0;    // 0 = Cover + Ep 1 preview, 1..7 = specific episode
+    let readAllMode = false;
+    let nerdMode = true;
+
+    // Interactive mini-lab states
+    let ep1SelectedAction = 'play';
+    let ep2SelectedScene = 'action';
+    let ep3Hour = 2; // 2 AM default
+    let ep4HandshakeStep = 4;
+    let ep5WifiMbps = 45;
+    let ep6Persona = 'comedy';
+    let ep7ChaosCount = 0;
+    let ep7MonkeyActive = false;
+    let quizAnswers = {};
+
+    const EPISODES = [
+      {
+        id: 1,
+        badge: "Episode 1",
+        title: "The 'Press Play' Freeze-Frame",
+        subtitle: "Why Netflix Splits Its Brain Into a Hotel Front Desk & a Secret Mini-Fridge",
+        color: "#ffd166",
+        teaser: "What happens when 280 million people press Play at 8:00 PM?",
+        laymanSummary: "Imagine staying at a giant hotel. You talk to the Front Desk (AWS Cloud) to check in, get your room key, and ask for dinner recommendations. Yesterday's cloud engineers might think you also call the Front Desk every time you want a sip of water—Wait! That would jam the elevators! Instead, Netflix puts a stocked Mini-Fridge (Open Connect Box) right inside your room so heavy video streams travel just a few miles.",
+        techSummary: "Netflix strictly separates its Control Plane (running on AWS microservices: authentication, catalog search, recommendations, billing, and session steering) from its Data Plane (Open Connect, Netflix's custom Content Delivery Network that streams heavy video bytes directly from ISP networks).",
+        panels: [
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffd166]",
+            captionTop: "Friday Night, 8:00 PM. Our hero settles onto the couch...",
+            sfx: "CLICK! ▶",
+            sfxColor: "bg-[#e50914] text-white",
+            svgType: "couch_click",
+            bubbles: [
+              { speaker: "Nishant", text: "Popcorn ready! Let's watch Stranger Things in crisp 4K Ultra HD!", pos: "left" },
+              { speaker: "TV Butler", text: "Order received! Asking Netflix HQ to start the movie right now!", pos: "right" }
+            ],
+            nerdNote: "Director's Note: Notice the dramatic finger pressing the remote! At peak hours, Netflix accounts for over 15% of global downstream internet traffic."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffadad]",
+            captionTop: "FREEZE! Hold everything right there!",
+            sfx: "FREEZE!! 🛑",
+            sfxColor: "bg-zinc-900 text-amber-300",
+            svgType: "internet_melt",
+            bubbles: [
+              { speaker: "Narrator", text: "Wait a second! A single 4K movie is 15 to 25 GIGABYTES of data!", pos: "left" },
+              { speaker: "Internet Pipe", text: "If 280 million people streamed 20GB from ONE central cloud server across the country, I would melt into lava!", pos: "right" }
+            ],
+            nerdNote: "Engineering Fact: Routing petabytes of raw video from centralized AWS regions would create massive internet exchange bottlenecks and unsustainable cloud egress fees."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#4cc9f0]",
+            captionTop: "Secret #1: The Split Brain",
+            sfx: "BRAIN #1: AWS",
+            sfxColor: "bg-white text-zinc-900",
+            svgType: "aws_hotel",
+            bubbles: [
+              { speaker: "AWS Concierge", text: "I'm the Control Plane! Think of me as the Hotel Front Desk.", pos: "left" },
+              { speaker: "AWS Concierge", text: "I check your password, load your homepage rows, and pick thumbnails. Zero video files live here!", pos: "right" }
+            ],
+            nerdNote: "Control Plane: Runs on AWS EC2/containers using Zuul API Gateway, Cassandra, and EVCache. Everything you see BEFORE pressing Play comes from AWS."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#06d6a0]",
+            captionTop: "Meanwhile, inside your local ISP...",
+            sfx: "BRAIN #2: OCA",
+            sfxColor: "bg-[#e50914] text-white",
+            svgType: "oca_fridge",
+            bubbles: [
+              { speaker: "Local OCA Box", text: "And I'm the Data Plane! Think of me as the Mini-Fridge right inside your bedroom!", pos: "left" },
+              { speaker: "Local OCA Box", text: "I hold the heavy video files just 3 miles from your house!", pos: "right" }
+            ],
+            nerdNote: "Data Plane: Netflix's custom Open Connect Appliances (OCAs) are physical storage servers packed with up to 300+ TB of flash/NVMe drives sitting directly inside local ISPs."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#bdb2ff]",
+            captionTop: "Teamwork makes the stream work!",
+            sfx: "TAG TEAM!",
+            sfxColor: "bg-amber-300 text-zinc-900",
+            svgType: "split_handshake",
+            bubbles: [
+              { speaker: "AWS Concierge", text: "When you hit Play, I hand your TV a tiny treasure map (Manifest) pointing to the nearest OCA Mini-Fridge!", pos: "left" },
+              { speaker: "TV Butler", text: "Wait... how did the movie get inside that Mini-Fridge in the first place?!", pos: "right" }
+            ],
+            nerdNote: "Next up in Episode 2: Before any movie can enter the Mini-Fridge, it has to survive Chef Encoder's Hollywood Blender!"
+          }
+        ]
+      },
+      {
+        id: 2,
+        badge: "Episode 2",
+        title: "The Hollywood Blender",
+        subtitle: "How a 100GB Studio Master Gets Chopped Into Tiny 2-Second Bites",
+        color: "#06d6a0",
+        teaser: "Why Netflix makes 1,200+ different files for a single movie!",
+        laymanSummary: "When a movie studio finishes a film, the master file is a gigantic 100GB+ wedding cake. You can't swallow a whole cake in one bite, and a smart watch needs a much smaller slice than a 75-inch 4K TV! So Chef Encoder slices the movie into tiny 2-to-4-second bite-sized chunks and bakes each chunk at dozens of different quality levels.",
+        techSummary: "Netflix's distributed AWS encoding pipeline splits studio mezzanine files into short 2–4 second GOP chunks, encodes them in parallel using per-title/per-shot optimization guided by VMAF (Video Multimethod Assessment Fusion), and packages them in HLS and DASH formats across multiple codecs (AVC, HEVC, AV1).",
+        panels: [
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffd166]",
+            captionTop: "Weeks earlier, at the Hollywood Studio Drop-off...",
+            sfx: "THUD!! 120 GB!",
+            sfxColor: "bg-zinc-900 text-white",
+            svgType: "studio_master",
+            bubbles: [
+              { speaker: "Studio Truck", text: "Special delivery! One uncompressed Studio Master file! It weighs 120 Gigabytes!", pos: "left" },
+              { speaker: "Chef Encoder", text: "120 GB?! If we sent that raw file to someone's phone on subway Wi-Fi, their battery would cry!", pos: "right" }
+            ],
+            nerdNote: "Ingest Stage: Studio source files ('mezzanine' masters) arrive in massive archival resolutions and bitrates unsuitable for direct consumer streaming."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#06d6a0]",
+            captionTop: "Step 1: Chop the movie into tiny 2-to-4 second slices!",
+            sfx: "CHOP! CHOP! 🔪",
+            sfxColor: "bg-[#e50914] text-white",
+            svgType: "chef_chop",
+            bubbles: [
+              { speaker: "Chef Encoder", text: "First, I never keep a movie as one giant file! I slice it into thousands of tiny 2-to-4 second video chunks!", pos: "left" },
+              { speaker: "Helper Worker", text: "And because they're separate slices, 500 cloud servers can cook all the slices at the exact same time!", pos: "right" }
+            ],
+            nerdNote: "Parallel Chunking: By splitting a 2-hour movie at scene/keyframe boundaries, Netflix encodes the whole movie across hundreds of AWS EC2 spot instances in minutes instead of days."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#4cc9f0]",
+            captionTop: "Step 2: The Quality Ladder",
+            sfx: "240p → 4K!",
+            sfxColor: "bg-amber-300 text-zinc-900",
+            svgType: "quality_ladder",
+            bubbles: [
+              { speaker: "Chef Encoder", text: "For EVERY 2-second slice, I bake a whole menu of resolutions: 240p, 480p, 720p, 1080p, and 4K HDR!", pos: "left" },
+              { speaker: "TV Butler", text: "Plus different audio tracks & subtitles for 30+ languages!", pos: "right" }
+            ],
+            nerdNote: "Encoding Ladder: Packaging in DASH and HLS formats means an old tablet, an iPhone on 4G, and a 4K Smart TV each get chunks tailored to their screen and decoder chip."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#ffadad]",
+            captionTop: "Step 3: Enter VMAF, the Robot Film Critic!",
+            sfx: "BEEP BOOP! 🔍",
+            sfxColor: "bg-zinc-900 text-emerald-300",
+            svgType: "vmaf_critic",
+            bubbles: [
+              { speaker: "VMAF Robot", text: "Hold on! Why spend the same data bits on a quiet bedroom chat as a giant spaceship explosion?!", pos: "left" },
+              { speaker: "VMAF Robot", text: "I score every scene with human-eye AI! Simple scenes use 40% fewer bits without looking blurry!", pos: "right" }
+            ],
+            nerdNote: "Per-Title & Per-Shot Encoding: Netflix invented VMAF (Video Multimethod Assessment Fusion) to score perceived visual quality, slashing bitrate by up to 40% while preserving sharpness."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#ffe6a7]",
+            captionTop: "All packed and ready to ship!",
+            sfx: "READY TO SHIP! 📦",
+            sfxColor: "bg-[#06d6a0] text-zinc-900",
+            svgType: "packed_chunks",
+            bubbles: [
+              { speaker: "Chef Encoder", text: "Now our movie is a neat stack of encrypted 2-second puzzle pieces!", pos: "left" },
+              { speaker: "Local OCA Box", text: "Send 'em to me at 2:00 AM while the humans are snoring!", pos: "right" }
+            ],
+            nerdNote: "Next up in Episode 3: How those freshly baked video chunks sneak into your neighborhood while you're fast asleep!"
+          }
+        ]
+      },
+      {
+        id: 3,
+        badge: "Episode 3",
+        title: "The 2:00 AM Night Shift",
+        subtitle: "How Netflix Predicts Tomorrow's Binge & Stocks Your ISP Overnight",
+        color: "#8338ec",
+        teaser: "Why Netflix ships physical red servers into your local internet provider!",
+        laymanSummary: "If a grocery store waited until you ordered milk to drive a truck from a farm 1,000 miles away, you'd wait all day. Instead, delivery trucks stock your neighborhood supermarket at 2:00 AM when the highways are completely empty! Netflix does the exact same thing with physical red server boxes (OCAs) placed inside your local Internet Service Provider.",
+        techSummary: "Netflix partners with ISPs worldwide to install Open Connect Appliances (OCAs) directly inside ISP data centers and Internet Exchange Points (IXPs) free of charge. Every night during off-peak hours (~2:00 AM local time), ML demand-prediction models pre-position popular titles onto local OCAs.",
+        panels: [
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#c7f9cc]",
+            captionTop: "Wait... Netflix builds PHYSICAL hardware?!",
+            sfx: "FREE HARDWARE! 🎁",
+            sfxColor: "bg-[#e50914] text-white",
+            svgType: "isp_gift",
+            bubbles: [
+              { speaker: "Netflix Engineer", text: "Hey Local ISP! Want a free, custom-built red super-server box? It holds 300 Terabytes of movies!", pos: "left" },
+              { speaker: "Local ISP Boss", text: "Wait—for FREE?! Why would you give us free hardware?!", pos: "right" }
+            ],
+            nerdNote: "Win-Win Economics: ISPs love hosting Open Connect Appliances because it keeps up to 70–90% of Netflix traffic inside their local network instead of paying expensive transit fees across backbone links!"
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#4cc9f0]",
+            captionTop: "Because everybody wins!",
+            sfx: "3 MILES AWAY! 📍",
+            sfxColor: "bg-zinc-900 text-amber-300",
+            svgType: "isp_basement",
+            bubbles: [
+              { speaker: "Netflix Engineer", text: "Because if our OCA box sits right inside your local building, your customers get instant 4K video with zero lag!", pos: "left" },
+              { speaker: "Local ISP Boss", text: "And we don't have to haul petabytes of traffic across the country! Plug it right in!", pos: "right" }
+            ],
+            nerdNote: "Global Footprint: Thousands of Open Connect Appliances sit inside ISP networks and Internet Exchange Points (IXPs) in over 175 countries."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#bdb2ff]",
+            captionTop: "Meanwhile, at 2:00 AM in your city...",
+            sfx: "2:00 AM ZZZ... 🌙",
+            sfxColor: "bg-indigo-950 text-amber-300",
+            svgType: "night_oracle",
+            bubbles: [
+              { speaker: "Oracle AI", text: "Shhh! Everyone in Seattle is asleep! The internet highways are 90% empty!", pos: "left" },
+              { speaker: "Oracle AI", text: "My ML crystal ball predicts 42,000 people here will watch Season 5 Episode 1 tomorrow at 8 PM!", pos: "right" }
+            ],
+            nerdNote: "Predictive Caching: Netflix uses machine learning on regional viewing history and new-release schedules to forecast exactly which chunks each neighborhood OCA will need tomorrow."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#ffd166]",
+            captionTop: "The Overnight Restock!",
+            sfx: "WHOOSH! 🚚💨",
+            sfxColor: "bg-emerald-500 text-zinc-900",
+            svgType: "night_fill",
+            bubbles: [
+              { speaker: "Local OCA Box", text: "Downloading tomorrow's hot movies over the quiet night pipes... 98%... 99%... 100% FULL!", pos: "left" },
+              { speaker: "Sleepy Highway", text: "Barely felt a tickle! See you tomorrow night!", pos: "right" }
+            ],
+            nerdNote: "Proactive vs. Reactive CDN: Traditional CDNs fetch files after a user requests them (cache miss). Open Connect proactively pre-warms its drives overnight before peak hours."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#ffadad]",
+            captionTop: "By 8:00 PM Friday Night...",
+            sfx: "LOCKED & LOADED! ⚡",
+            sfxColor: "bg-zinc-900 text-white",
+            svgType: "oca_ready",
+            bubbles: [
+              { speaker: "Local OCA Box", text: "I'm sitting 3 miles from Nishant's couch with every 2-second chunk of Stranger Things ready in flash memory!", pos: "left" },
+              { speaker: "TV Butler", text: "Okay! Let's unfreeze that remote click from Episode 1!", pos: "right" }
+            ],
+            nerdNote: "Next up in Episode 4: We unfreeze the clock and watch the 200-millisecond handshake that connects your TV to that local red box!"
+          }
+        ]
+      },
+      {
+        id: 4,
+        badge: "Episode 4",
+        title: "The 200-Millisecond Handshake",
+        subtitle: "How AWS Steers Your TV Straight to the Nearest Open Connect Box",
+        color: "#4cc9f0",
+        teaser: "UNFREEZE! Follow your packet from couch to AWS to your local ISP!",
+        laymanSummary: "When you press Play, your TV doesn't know which local mini-fridge has your movie. So it makes a super-fast phone call to the AWS Front Desk. In less than a blink of an eye (under 200 milliseconds), AWS checks your subscription, checks which nearby OCA boxes are healthy and uncrowded, and hands your TV a secret VIP pass with the exact address of Box #42 down the street.",
+        techSummary: "On Playback request, the client calls AWS Playback Apps via Zuul. The Steering Service evaluates BGP network proximity, OCA server load, and file cache state, returning a signed Playback Manifest containing ranked URLs of optimal local Open Connect Appliances.",
+        panels: [
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#ffd166]",
+            captionTop: "0 ms — UNFREEZE! The Play request launches!",
+            sfx: "PING! 0ms 🚀",
+            sfxColor: "bg-[#e50914] text-white",
+            svgType: "ping_aws",
+            bubbles: [
+              { speaker: "TV Butler", text: "Calling AWS Control Plane! Nishant pressed Play on Title #80057281! Where do I get the video?", pos: "left" },
+              { speaker: "Zuul Gatekeeper", text: "ID badge verified! Routing you to the Playback Steering Boss!", pos: "right" }
+            ],
+            nerdNote: "Millisecond 0–50: Your request hits AWS API Gateway (Zuul), verifies DRM & subscription status, and asks the Open Connect Steering Service for a server list."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#4cc9f0]",
+            captionTop: "80 ms — The Steering Boss checks the map...",
+            sfx: "SCANNING... 🧭",
+            sfxColor: "bg-zinc-900 text-amber-300",
+            svgType: "steering_map",
+            bubbles: [
+              { speaker: "Steering Boss", text: "Let's see: OCA Box #42 is inside Nishant's ISP 3 miles away, has the 4K chunks cached, and is only 35% busy!", pos: "left" },
+              { speaker: "Steering Boss", text: "And just in case Box #42 sneezes, I'll list Box #43 at the regional exchange as Backup #2!", pos: "right" }
+            ],
+            nerdNote: "Millisecond 50–120: The Steering Service combines ISP BGP routing data, real-time OCA health telemetry, and cache inventory to rank the top 3–5 closest servers."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#06d6a0]",
+            captionTop: "140 ms — The Treasure Map (Manifest) arrives!",
+            sfx: "GOT THE MAP! 🗺️",
+            sfxColor: "bg-white text-zinc-900",
+            svgType: "manifest_scroll",
+            bubbles: [
+              { speaker: "AWS Concierge", text: "Here is your Playback Manifest! It has the exact URLs for every 2-second video & audio chunk on Box #42!", pos: "left" },
+              { speaker: "TV Butler", text: "Thanks AWS! I don't need to bother you anymore—I'm talking straight to Box #42 now!", pos: "right" }
+            ],
+            nerdNote: "The Manifest Handoff: Once AWS returns the signed manifest and DRM license, AWS steps out of the data path completely!"
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffadad]",
+            captionTop: "190 ms — Direct Local Laser Beam!",
+            sfx: "ZOOM! 4ms LATENCY! ⚡",
+            sfxColor: "bg-amber-300 text-zinc-900",
+            svgType: "direct_stream",
+            bubbles: [
+              { speaker: "TV Butler", text: "Hey Local OCA Box #42! Send me Chunk #1 right now!", pos: "left" },
+              { speaker: "Local OCA Box", text: "Catch! Because I'm inside your ISP, that chunk traveled just 3 miles in 4 milliseconds!", pos: "right" }
+            ],
+            nerdNote: "Optimized TCP/TLS & FreeBSD: OCAs run a tuned FreeBSD OS and NGINX web server optimized exclusively to pump encrypted video chunks from NVMe drives onto the network wire."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffe6a7]",
+            captionTop: "200 ms — Movie starts! Zero spinning wheel!",
+            sfx: "TA-DUM!! 🎬",
+            sfxColor: "bg-[#e50914] text-white",
+            svgType: "tadum_screen",
+            bubbles: [
+              { speaker: "Nishant", text: "Whoa! It started immediately! How did that happen so fast?!", pos: "left" },
+              { speaker: "TV Butler", text: "Wait until you see what happens in Episode 5 when your roommate starts downloading a 90GB video game...", pos: "right" }
+            ],
+            nerdNote: "Fast Startup Trick: Notice how playback starts in ~200ms! In Episode 5, we'll see how Adaptive Bitrate Streaming keeps it playing no matter what happens to your Wi-Fi!"
+          }
+        ]
+      },
+      {
+        id: 5,
+        badge: "Episode 5",
+        title: "Smoothness Over Perfection",
+        subtitle: "How Your TV Outsmarts Bad Wi-Fi Using Adaptive Bitrate Streaming (ABR)",
+        color: "#fb5607",
+        teaser: "Plot twist: Netflix's servers DON'T decide your video quality—your TV does!",
+        laymanSummary: "Here's a secret that surprises even software engineers: Netflix's servers do NOT decide whether you watch in 720p or 4K! The server just lays out the buffet menu of 2-second chunks. Your TV's video player is the smart driver watching the road ahead. If your Wi-Fi suddenly slows down because someone turns on the microwave or downloads a huge file, your TV quietly grabs a smaller 720p chunk for 4 seconds so the movie NEVER stops to buffer, then jumps right back to 4K!",
+        techSummary: "Client-side Adaptive Bitrate (ABR) autonomy: The client player continuously measures throughput and forward buffer occupancy (in seconds of video stored locally). Before requesting each 2–4 second DASH/HLS segment, the client algorithm selects the highest bitrate tier that will not risk buffer underrun (re-buffering).",
+        panels: [
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffd166]",
+            captionTop: "Pop Quiz: Who controls your video quality?",
+            sfx: "PLOT TWIST! 🤯",
+            sfxColor: "bg-zinc-900 text-amber-300",
+            svgType: "client_brain",
+            bubbles: [
+              { speaker: "Local OCA Box", text: "People always blame me when the picture turns blurry for 3 seconds! Calling all humans: I'm just a vending machine!", pos: "left" },
+              { speaker: "TV Butler", text: "It's true! I—the player inside your TV or browser—make 100% of the quality decisions every 2 seconds!", pos: "right" }
+            ],
+            nerdNote: "Client-Side ABR Autonomy: The OCA server is stateless and dumb on purpose—that lets one server feed 100,000+ streams at once without tracking each user's Wi-Fi hiccups!"
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#4cc9f0]",
+            captionTop: "The Secret Bucket: Your Forward Buffer!",
+            sfx: "BUFFER: 24 SEC 🪣",
+            sfxColor: "bg-[#06d6a0] text-zinc-900",
+            svgType: "buffer_bucket",
+            bubbles: [
+              { speaker: "TV Butler", text: "See this bucket? While you watch Chunk #1, I've already downloaded the NEXT 10 chunks ahead of time!", pos: "left" },
+              { speaker: "TV Butler", text: "As long as this bucket never hits empty, you will NEVER see a spinning loading circle!", pos: "right" }
+            ],
+            nerdNote: "Startup vs. Steady State: The player often fetches the very first chunk at a moderate resolution so playback starts immediately, then ramps up to 1080p/4K as the buffer fills."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#ffadad]",
+            captionTop: "SUDDENLY! A Wi-Fi Disaster Strikes!",
+            sfx: "WI-FI DROP!! 📉",
+            sfxColor: "bg-[#e50914] text-white",
+            svgType: "wifi_villain",
+            bubbles: [
+              { speaker: "Roommate", text: "Woohoo! Downloading a 95GB game patch at full speed while reheating leftover pizza in the microwave!", pos: "left" },
+              { speaker: "Home Router", text: "COUGH! SPUTTER! Bandwidth just dropped from 60 Mbps to 4 Mbps!", pos: "right" }
+            ],
+            nerdNote: "Last-Mile Bottleneck: 95% of streaming hiccups happen inside the home Wi-Fi or local cable loop—not in the cloud!"
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#ffe6a7]",
+            captionTop: "TV Butler springs into action on Chunk #18!",
+            sfx: "GEAR SHIFT! ⚙️",
+            sfxColor: "bg-zinc-900 text-white",
+            svgType: "abr_switch",
+            bubbles: [
+              { speaker: "TV Butler", text: "Whoa! Chunk #17 took too long to arrive! If I ask for Chunk #18 in 4K, the bucket will run dry!", pos: "left" },
+              { speaker: "TV Butler", text: "Hey OCA Box! Give me Chunk #18 and #19 in lightweight 720p instead!", pos: "right" }
+            ],
+            nerdNote: "Keyfame Alignment: Because Chef Encoder aligned every quality tier at the exact same 2-second frame boundaries, switching from 4K to 720p mid-sentence is completely invisible!"
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#06d6a0]",
+            captionTop: "10 seconds later... Back to 4K Ultra HD!",
+            sfx: "CRISP 4K! ✨",
+            sfxColor: "bg-amber-300 text-zinc-900",
+            svgType: "back_to_4k",
+            bubbles: [
+              { speaker: "TV Butler", text: "Wi-Fi is fast again! Switching Chunk #22 right back to 4K HDR!", pos: "left" },
+              { speaker: "Nishant", text: "Didn't pause once! Pass the popcorn!", pos: "right" }
+            ],
+            nerdNote: "Smoothness Over Perfection: Viewers forgive a 4-second dip in resolution far more easily than a frozen screen with a spinning spinner."
+          }
+        ]
+      },
+      {
+        id: 6,
+        badge: "Episode 6",
+        title: "The Thumbnail Illusion & Binge Magic",
+        subtitle: "Why Your Netflix Homepage Looks Totally Different From Your Best Friend's",
+        color: "#ec4899",
+        teaser: "Wait—even the movie posters change based on what you like?!",
+        laymanSummary: "Before you even pressed Play, hundreds of tiny AWS worker bees (microservices) built a homepage designed exclusively for you. Even for the exact same movie, if you love comedies, Netflix shows you a thumbnail with a funny actor; if you love romance, it shows two people holding hands! And when an episode reaches the final 30 seconds, your TV secretly starts downloading Episode 2 before you even touch the remote.",
+        techSummary: "Netflix's AWS personalization engine uses Contextual Bandits and microservices to rank rows and dynamically select personalized artwork (AVA — Aesthetic Visual Analysis) per user profile. During playback ending credits, the client prefetches the manifest and initial segments of the next episode for zero-latency binge transitions.",
+        panels: [
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffd166]",
+            captionTop: "Have you ever peeked at a friend's Netflix screen?",
+            sfx: "WAIT A MINUTE! 👀",
+            sfxColor: "bg-[#e50914] text-white",
+            svgType: "two_screens",
+            bubbles: [
+              { speaker: "Nishant", text: "Hey! Why does Good Will Hunting look like a hilarious Robin Williams comedy on my screen...", pos: "left" },
+              { speaker: "Friend", text: "...while on MY screen the exact same movie has a romantic poster of Matt Damon kissing Minnie Driver?!", pos: "right" }
+            ],
+            nerdNote: "Artwork Personalization: Netflix discovered that a viewer gives a title ~1.8 seconds of attention while scrolling. Personalized thumbnails dramatically help users spot why a title fits their taste."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#bdb2ff]",
+            captionTop: "Inside the Artwork Matchmaker Factory...",
+            sfx: "CUSTOM ART! 🎨",
+            sfxColor: "bg-zinc-900 text-amber-300",
+            svgType: "artwork_artist",
+            bubbles: [
+              { speaker: "AVA Artist Bot", text: "I scan every frame of a movie to pull out dozens of great candidate posters—action shots, funny faces, villains, couples!", pos: "left" },
+              { speaker: "Matchmaker AI", text: "And if you watch lots of sci-fi thrillers or strong villains, I pick the thumbnail that speaks your language!", pos: "right" }
+            ],
+            nerdNote: "Contextual Bandits: Rather than showing one static poster to 280M users, contextual bandit algorithms match artwork attributes to each profile's historical preferences."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#4cc9f0]",
+            captionTop: "Meanwhile, the episode reaches 44:30... Credits roll!",
+            sfx: "NEXT EPISODE IN 5... 4...",
+            sfxColor: "bg-amber-300 text-zinc-900",
+            svgType: "binge_prefetch",
+            bubbles: [
+              { speaker: "TV Butler", text: "Psst! Nishant hasn't touched the remote, which means a Binge-Watch is 99% guaranteed!", pos: "left" },
+              { speaker: "Local OCA Box", text: "I'm already sliding Chunk #1 and #2 of Episode 2 into your TV's memory before the countdown hits zero!", pos: "right" }
+            ],
+            nerdNote: "Proactive Prefetching: While credits roll, the player fetches the next episode's manifest and buffers its initial video/audio segments in the background."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#06d6a0]",
+            captionTop: "0.0 Seconds Later — Seamless Binge!",
+            sfx: "INSTANT PLAY! 🍿",
+            sfxColor: "bg-[#e50914] text-white",
+            svgType: "binge_happy",
+            bubbles: [
+              { speaker: "Nishant", text: "Episode 2 started faster than changing a TV channel! Just one more episode before bed...", pos: "left" },
+              { speaker: "Narrator", text: "(Narrator voice: He watched four more episodes.)", pos: "right" }
+            ],
+            nerdNote: "Bonus Episode Ahead: What happens when a server catches fire or an entire cloud data center goes offline while you're binging? Enter Chaos Monkey!"
+          }
+        ]
+      },
+      {
+        id: 7,
+        badge: "Bonus Episode",
+        title: "Chaos Monkey! (Breaking Things on Purpose)",
+        subtitle: "Why Netflix Unleashes a Digital Monkey to Unplug Its Own Servers Every Day",
+        color: "#e50914",
+        teaser: "Bonus Comic: How do you build an unbreakable system? Break it yourself at 10 AM!",
+        laymanSummary: "Most companies pray their servers never crash. Netflix assumes servers WILL crash every single day! So they wrote a program called Chaos Monkey that roams through their live cloud servers during business hours (9 AM to 3 PM) and randomly pulls the plug on servers! Why? Because it forces engineers to build automatic backup parachutes for every single feature.",
+        techSummary: "Pioneered by Netflix during its AWS migration, Chaos Engineering (Chaos Monkey & Chaos Kong) randomly terminates production instances and simulates entire AWS region outages. If the Recommendation microservice fails, graceful degradation serves a pre-computed static fallback row so playback never breaks.",
+        panels: [
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffadad]",
+            captionTop: "Tuesday, 10:15 AM inside Netflix's Live Cloud...",
+            sfx: "OOH OOH AAH AAH! 🐒🔧",
+            sfxColor: "bg-zinc-900 text-amber-300",
+            svgType: "chaos_monkey_attack",
+            bubbles: [
+              { speaker: "Chaos Monkey", text: "Good morning engineers! Eeny, meeny, miny, moe... I just unplugged Server #409 in live production!", pos: "left" },
+              { speaker: "New Intern", text: "WAIT WHAT?! Someone stop that monkey! He's unplugging real servers while millions of people are watching!!", pos: "right" }
+            ],
+            nerdNote: "Chaos Monkey Origin: Created in 2011 when Netflix moved to AWS. Instead of hoping hardware never fails, Chaos Monkey guarantees failure happens while engineers are awake at their desks."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffd166]",
+            captionTop: "The Senior Engineer doesn't even spill her coffee...",
+            sfx: "ZERO PANIC ☕",
+            sfxColor: "bg-[#06d6a0] text-zinc-900",
+            svgType: "calm_engineer",
+            bubbles: [
+              { speaker: "Senior Engineer", text: "Relax! We built Chaos Monkey ourselves! If a server crashes at 3:00 AM on Saturday, nobody wants to wake up.", pos: "left" },
+              { speaker: "Senior Engineer", text: "By letting the Monkey attack at 10:00 AM, every single microservice is forced to have an automatic twin!", pos: "right" }
+            ],
+            nerdNote: "Design for Failure: Stateless microservices, EVCache replication, and circuit breakers mean individual server deaths are completely invisible to users."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#4cc9f0]",
+            captionTop: "Graceful Fallbacks: What if the Recommendation AI breaks?",
+            sfx: "PLAN B ACTIVATED! 🛡️",
+            sfxColor: "bg-amber-300 text-zinc-900",
+            svgType: "graceful_fallback",
+            bubbles: [
+              { speaker: "Circuit Breaker", text: "Uh oh! The 'Personalized Row' service is taking more than 500ms! I'm flipping the safety switch!", pos: "left" },
+              { speaker: "TV Butler", text: "Instead of crashing with an Error Page, I'll show Nishant a pre-saved 'Top 10 Popular Movies Today' row!", pos: "right" }
+            ],
+            nerdNote: "Graceful Degradation: Netflix categorizes dependencies as Critical vs. Non-Critical. If personalization fails, fallback caches serve popular titles so you can always hit Play."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#06d6a0]",
+            captionTop: "What about Chaos KONG?! (When a whole region goes dark!)",
+            sfx: "REGION REROUTE! 🌍",
+            sfxColor: "bg-[#e50914] text-white",
+            svgType: "chaos_kong",
+            bubbles: [
+              { speaker: "Chaos Kong", text: "ROAR!! I just pretended the entire US-East Cloud Data Center vanished!", pos: "left" },
+              { speaker: "Global Traffic Cop", text: "No sweat! Rerouting all control traffic to US-West in seconds—and local ISP OCA boxes keep streaming movies without dropping a single frame!", pos: "right" }
+            ],
+            nerdNote: "Congratulations! You now know the entire journey of how Netflix works from scratch—from AWS and Chef Encoder to 2 AM Open Connect boxes, ABR, and Chaos Monkey!"
+          }
+        ]
+      }
+    ];
+
+    const QUIZ_QUESTIONS = [
+      {
+        q: "1. When you press Play on a 4K movie, where do the actual heavy gigabytes of video data stream from?",
+        options: [
+          "Directly from Netflix's central headquarters in California",
+          "From an Open Connect Appliance (OCA) red server box sitting right inside your local ISP",
+          "From Amazon Web Services (AWS) central billing database"
+        ],
+        correct: 1,
+        explanation: "Bingo! AWS is the 'Hotel Front Desk' (Control Plane), while the heavy video streams from a local Open Connect Appliance ('Mini-Fridge') inside your ISP!"
+      },
+      {
+        q: "2. When do Open Connect boxes download tomorrow's predicted hit movies and episodes?",
+        options: [
+          "Around 2:00 AM local time when neighborhood internet highways are quiet",
+          "Only at 8:00 PM Friday night when everyone clicks Play at once",
+          "Once a year on New Year's Eve"
+        ],
+        correct: 0,
+        explanation: "Spot on! Predictive ML models pre-fill local OCA drives during off-peak overnight hours (~2:00 AM) so prime-time traffic stays smooth."
+      },
+      {
+        q: "3. Who decides whether the next 2-second chunk of video is fetched in 720p, 1080p, or 4K?",
+        options: [
+          "A technician in a control room watching your screen",
+          "The client video player inside your TV/device measuring your live Wi-Fi & buffer bucket",
+          "Your microwave oven"
+        ],
+        correct: 1,
+        explanation: "Correct! Your device's client player makes Adaptive Bitrate (ABR) decisions locally every few seconds based on real-time network speed and buffer health."
+      },
+      {
+        q: "4. Why does Netflix run 'Chaos Monkey' in live production during the workday?",
+        options: [
+          "Because monkeys love watching nature documentaries",
+          "To intentionally unplug servers so engineers build automatic fallbacks that never interrupt your stream",
+          "To delete unpopular movies"
+        ],
+        correct: 1,
+        explanation: "Nailed it! By testing server failures on purpose during the day, Netflix ensures automatic failover and graceful fallbacks keep streams running 24/7."
+      }
+    ];
+
+    // =========================================================================
+    // CUSTOM VECTOR COMIC ART GENERATOR (29 bespoke SVG scenes!)
+    // =========================================================================
+    function getComicSvg(type) {
+      switch (type) {
+        case 'couch_click':
+          return `<svg viewBox="0 0 360 155" class="w-full h-36 sm:h-40 mx-auto">
+            <!-- Living room background -->
+            <rect x="10" y="10" width="340" height="135" rx="12" fill="#1e1b4b" stroke="#18181b" stroke-width="3"/>
+            <!-- TV Screen -->
+            <rect x="215" y="25" width="115" height="72" rx="6" fill="#090d16" stroke="#ffffff" stroke-width="3"/>
+            <text x="272" y="67" text-anchor="middle" fill="#e50914" font-family="Bangers" font-size="24">NETFLIX</text>
+            <rect x="255" y="97" width="35" height="10" fill="#94a3b8"/>
+            <!-- Laser beam from remote -->
+            <line x1="142" y1="74" x2="215" y2="62" stroke="#e50914" stroke-width="4" stroke-dasharray="6,4"/>
+            <circle cx="215" cy="62" r="8" fill="#ffd166" stroke="#18181b" stroke-width="2"/>
+            <!-- Couch & Character -->
+            <rect x="25" y="78" width="110" height="50" rx="12" fill="#e50914" stroke="#18181b" stroke-width="3"/>
+            <circle cx="75" cy="56" r="18" fill="#ffcdb2" stroke="#18181b" stroke-width="3"/>
+            <path d="M58 50 Q75 34 92 50" fill="#18181b"/>
+            <circle cx="70" cy="55" r="2.5" fill="#18181b"/>
+            <circle cx="81" cy="55" r="2.5" fill="#18181b"/>
+            <path d="M69 63 Q75 68 82 63" fill="none" stroke="#18181b" stroke-width="2.5"/>
+            <!-- Popcorn tub -->
+            <circle cx="48" cy="76" r="5" fill="#ffd166"/><circle cx="55" cy="74" r="5" fill="#ffd166"/><circle cx="62" cy="76" r="5" fill="#ffd166"/>
+            <polygon points="44,78 66,78 62,105 48,105" fill="#ffffff" stroke="#18181b" stroke-width="2.5"/>
+            <line x1="51" y1="78" x2="52" y2="105" stroke="#e50914" stroke-width="3"/>
+            <line x1="59" y1="78" x2="58" y2="105" stroke="#e50914" stroke-width="3"/>
+            <!-- Remote in hand -->
+            <rect x="115" y="66" width="28" height="14" rx="4" fill="#18181b" stroke="#ffffff" stroke-width="2"/>
+            <circle cx="134" cy="73" r="4" fill="#e50914"/>
+          </svg>`;
+
+        case 'internet_melt':
+          return `<svg viewBox="0 0 360 155" class="w-full h-36 sm:h-40 mx-auto">
+            <rect x="15" y="25" width="85" height="105" rx="8" fill="#4cc9f0" stroke="#18181b" stroke-width="3"/>
+            <text x="57" y="52" text-anchor="middle" font-family="Bangers" font-size="15" fill="#18181b">ONE CENTRAL</text>
+            <text x="57" y="70" text-anchor="middle" font-family="Bangers" font-size="15" fill="#18181b">CLOUD SERVER</text>
+            <!-- Sweating internet pipe -->
+            <rect x="100" y="55" width="160" height="46" rx="10" fill="#e50914" stroke="#18181b" stroke-width="3.5"/>
+            <circle cx="180" cy="78" r="28" fill="#ffd166" stroke="#18181b" stroke-width="3"/>
+            <text x="180" y="75" text-anchor="middle" font-family="Bangers" font-size="13" fill="#18181b">280M x 20GB</text>
+            <text x="180" y="90" text-anchor="middle" font-family="Bangers" font-size="12" fill="#e50914">OVERLOAD!!</text>
+            <!-- Flame / Sweat drops -->
+            <path d="M135 45 Q140 30 145 45 Z" fill="#4cc9f0" stroke="#18181b" stroke-width="1.5"/>
+            <path d="M215 45 Q220 30 225 45 Z" fill="#4cc9f0" stroke="#18181b" stroke-width="1.5"/>
+            <!-- Homes on right -->
+            <rect x="265" y="20" width="75" height="34" rx="5" fill="#ffffff" stroke="#18181b" stroke-width="2.5"/>
+            <text x="302" y="42" text-anchor="middle" font-family="Bangers" font-size="13" fill="#18181b">⏳ BUFFERING...</text>
+            <rect x="265" y="62" width="75" height="34" rx="5" fill="#ffffff" stroke="#18181b" stroke-width="2.5"/>
+            <text x="302" y="84" text-anchor="middle" font-family="Bangers" font-size="13" fill="#18181b">⏳ BUFFERING...</text>
+            <rect x="265" y="104" width="75" height="34" rx="5" fill="#ffffff" stroke="#18181b" stroke-width="2.5"/>
+            <text x="302" y="126" text-anchor="middle" font-family="Bangers" font-size="13" fill="#18181b">⏳ BUFFERING...</text>
+          </svg>`;
+
+        case 'aws_hotel':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <!-- Cloud shape -->
+            <path d="M45 105 Q20 105 20 82 Q20 62 42 58 Q55 28 95 28 Q135 28 148 56 Q175 58 175 82 Q175 105 150 105 Z" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <!-- Hotel Desk -->
+            <rect x="35" y="95" width="190" height="42" rx="6" fill="#ff9f1c" stroke="#18181b" stroke-width="3"/>
+            <text x="130" y="121" text-anchor="middle" font-family="Bangers" font-size="18" fill="#18181b">🏨 AWS FRONT DESK (CONTROL)</text>
+            <!-- Bell & Key icons -->
+            <circle cx="95" cy="68" r="14" fill="#ffd166" stroke="#18181b" stroke-width="2.5"/>
+            <circle cx="90" cy="65" r="2" fill="#18181b"/><circle cx="100" cy="65" r="2" fill="#18181b"/>
+            <path d="M90 73 Q95 77 100 73" fill="none" stroke="#18181b" stroke-width="2"/>
+            <rect x="185" y="32" width="58" height="52" rx="6" fill="#fef08a" stroke="#18181b" stroke-width="2.5"/>
+            <text x="214" y="50" text-anchor="middle" font-family="Bangers" font-size="11" fill="#18181b">✓ LOGIN</text>
+            <text x="214" y="64" text-anchor="middle" font-family="Bangers" font-size="11" fill="#18181b">✓ THUMBNAILS</text>
+            <text x="214" y="78" text-anchor="middle" font-family="Bangers" font-size="11" fill="#e50914">✕ 0% VIDEO</text>
+          </svg>`;
+
+        case 'oca_fridge':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <!-- Red OCA Mini-Fridge Server -->
+            <rect x="55" y="16" width="150" height="120" rx="10" fill="#e50914" stroke="#18181b" stroke-width="3.5"/>
+            <rect x="70" y="28" width="120" height="22" rx="4" fill="#18181b"/>
+            <circle cx="84" cy="39" r="4" fill="#06d6a0"/>
+            <circle cx="98" cy="39" r="4" fill="#06d6a0"/>
+            <circle cx="112" cy="39" r="4" fill="#ffd166"/>
+            <text x="152" y="44" text-anchor="middle" font-family="Bangers" font-size="13" fill="#ffffff">OCA BOX</text>
+            <!-- Cute face on server -->
+            <circle cx="105" cy="74" r="4.5" fill="#ffffff"/>
+            <circle cx="155" cy="74" r="4.5" fill="#ffffff"/>
+            <path d="M112 88 Q130 98 148 88" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+            <rect x="72" y="104" width="116" height="20" rx="4" fill="#ffd166" stroke="#18181b" stroke-width="2"/>
+            <text x="130" y="118" text-anchor="middle" font-family="Bangers" font-size="13" fill="#18181b">🧊 300 TB MINI-FRIDGE</text>
+          </svg>`;
+
+        case 'split_handshake':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="15" y="25" width="72" height="45" rx="8" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="51" y="52" text-anchor="middle" font-family="Bangers" font-size="14" fill="#18181b">☁️ AWS</text>
+            <rect x="170" y="25" width="75" height="45" rx="8" fill="#e50914" stroke="#18181b" stroke-width="3"/>
+            <text x="207" y="52" text-anchor="middle" font-family="Bangers" font-size="14" fill="#ffffff">🧊 OCA BOX</text>
+            <rect x="85" y="92" width="90" height="44" rx="8" fill="#18181b" stroke="#ffffff" stroke-width="2.5"/>
+            <text x="130" y="119" text-anchor="middle" font-family="Bangers" font-size="15" fill="#ffd166">📺 YOUR TV</text>
+            <!-- Arrows -->
+            <path d="M55 72 L95 92" stroke="#18181b" stroke-width="3" stroke-dasharray="4,3"/>
+            <path d="M205 72 L165 92" stroke="#e50914" stroke-width="5"/>
+            <text x="52" y="92" font-family="Bangers" font-size="11" fill="#18181b">1. Tiny Map</text>
+            <text x="178" y="92" font-family="Bangers" font-size="11" fill="#e50914">2. 4K Video!</text>
+          </svg>`;
+
+        case 'studio_master':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <!-- Giant Golden Film Reel Vault -->
+            <rect x="35" y="20" width="145" height="110" rx="12" fill="#94a3b8" stroke="#18181b" stroke-width="3.5"/>
+            <circle cx="107" cy="75" r="36" fill="#ffd166" stroke="#18181b" stroke-width="3"/>
+            <circle cx="107" cy="75" r="10" fill="#18181b"/>
+            <text x="107" y="38" text-anchor="middle" font-family="Bangers" font-size="15" fill="#18181b">STUDIO MASTER</text>
+            <rect x="62" y="102" width="90" height="22" rx="4" fill="#e50914" stroke="#18181b" stroke-width="2"/>
+            <text x="107" y="118" text-anchor="middle" font-family="Bangers" font-size="14" fill="#ffffff">120 GIGABYTES!</text>
+            <!-- Tiny Phone sweating -->
+            <rect x="245" y="42" width="55" height="86" rx="8" fill="#18181b" stroke="#ffffff" stroke-width="2.5"/>
+            <rect x="251" y="52" width="43" height="64" rx="3" fill="#4cc9f0"/>
+            <text x="272" y="82" text-anchor="middle" font-family="Bangers" font-size="12" fill="#18181b">😱 TOO</text>
+            <text x="272" y="98" text-anchor="middle" font-family="Bangers" font-size="12" fill="#18181b">HEAVY!!</text>
+            <path d="M185 75 L235 75" stroke="#18181b" stroke-width="4"/>
+          </svg>`;
+
+        case 'chef_chop':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <!-- Film strip chopped into 2-second chunks -->
+            <rect x="20" y="65" width="68" height="52" rx="6" fill="#ffd166" stroke="#18181b" stroke-width="3"/>
+            <text x="54" y="89" text-anchor="middle" font-family="Bangers" font-size="14" fill="#18181b">CHUNK #1</text>
+            <text x="54" y="106" text-anchor="middle" font-family="Bangers" font-size="12" fill="#e50914">0:00 - 0:02</text>
+
+            <rect x="104" y="65" width="68" height="52" rx="6" fill="#ffd166" stroke="#18181b" stroke-width="3"/>
+            <text x="138" y="89" text-anchor="middle" font-family="Bangers" font-size="14" fill="#18181b">CHUNK #2</text>
+            <text x="138" y="106" text-anchor="middle" font-family="Bangers" font-size="12" fill="#e50914">0:02 - 0:04</text>
+
+            <rect x="188" y="65" width="68" height="52" rx="6" fill="#ffd166" stroke="#18181b" stroke-width="3"/>
+            <text x="222" y="89" text-anchor="middle" font-family="Bangers" font-size="14" fill="#18181b">CHUNK #3</text>
+            <text x="222" y="106" text-anchor="middle" font-family="Bangers" font-size="12" fill="#e50914">0:04 - 0:06</text>
+
+            <rect x="272" y="65" width="68" height="52" rx="6" fill="#ffd166" stroke="#18181b" stroke-width="3"/>
+            <text x="306" y="89" text-anchor="middle" font-family="Bangers" font-size="14" fill="#18181b">CHUNK #4</text>
+            <text x="306" y="106" text-anchor="middle" font-family="Bangers" font-size="12" fill="#e50914">0:06 - 0:08</text>
+
+            <!-- Chef Hat Badge -->
+            <rect x="95" y="16" width="170" height="34" rx="8" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="180" y="38" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">👨‍🍳 2-TO-4 SECOND BITES!</text>
+          </svg>`;
+
+        case 'quality_ladder':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="25" y="105" width="42" height="28" rx="4" fill="#94a3b8" stroke="#18181b" stroke-width="2.5"/>
+            <text x="46" y="124" text-anchor="middle" font-family="Bangers" font-size="13" fill="#18181b">240p</text>
+
+            <rect x="77" y="82" width="46" height="51" rx="4" fill="#4cc9f0" stroke="#18181b" stroke-width="2.5"/>
+            <text x="100" y="112" text-anchor="middle" font-family="Bangers" font-size="14" fill="#18181b">720p</text>
+
+            <rect x="133" y="54" width="50" height="79" rx="4" fill="#ffd166" stroke="#18181b" stroke-width="2.5"/>
+            <text x="158" y="98" text-anchor="middle" font-family="Bangers" font-size="15" fill="#18181b">1080p</text>
+
+            <rect x="193" y="22" width="52" height="111" rx="4" fill="#e50914" stroke="#18181b" stroke-width="3"/>
+            <text x="219" y="80" text-anchor="middle" font-family="Bangers" font-size="16" fill="#ffffff">4K HDR</text>
+          </svg>`;
+
+        case 'vmaf_critic':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="65" y="20" width="130" height="90" rx="14" fill="#18181b" stroke="#ffffff" stroke-width="3"/>
+            <!-- Monocle Robot Eyes -->
+            <circle cx="105" cy="58" r="14" fill="#06d6a0" stroke="#ffffff" stroke-width="2.5"/>
+            <circle cx="155" cy="58" r="18" fill="#ffd166" stroke="#e50914" stroke-width="3"/>
+            <text x="130" y="96" text-anchor="middle" font-family="Bangers" font-size="15" fill="#ffffff">VMAF SCORE: 96/100</text>
+            <rect x="45" y="114" width="170" height="24" rx="6" fill="#06d6a0" stroke="#18181b" stroke-width="2.5"/>
+            <text x="130" y="131" text-anchor="middle" font-family="Bangers" font-size="13" fill="#18181b">40% SMALLER • SAME CLARITY!</text>
+          </svg>`;
+
+        case 'packed_chunks':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="35" y="30" width="190" height="95" rx="10" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <rect x="50" y="45" width="48" height="30" rx="4" fill="#e50914" stroke="#18181b" stroke-width="2"/>
+            <rect x="106" y="45" width="48" height="30" rx="4" fill="#ffd166" stroke="#18181b" stroke-width="2"/>
+            <rect x="162" y="45" width="48" height="30" rx="4" fill="#4cc9f0" stroke="#18181b" stroke-width="2"/>
+            <text x="130" y="105" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">HLS + DASH ENCRYPTED BOXES</text>
+          </svg>`;
+
+        case 'isp_gift':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <!-- Delivery of Red OCA Box to Local ISP -->
+            <rect x="30" y="35" width="120" height="90" rx="8" fill="#e50914" stroke="#18181b" stroke-width="3.5"/>
+            <rect x="82" y="35" width="16" height="90" fill="#ffd166" stroke="#18181b" stroke-width="2"/>
+            <text x="90" y="26" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">🎀 FREE OCA SERVER!</text>
+            <path d="M165 80 L215 80" stroke="#18181b" stroke-width="4"/>
+            <rect x="225" y="25" width="110" height="105" rx="8" fill="#ffffff" stroke="#18181b" stroke-width="3.5"/>
+            <text x="280" y="65" text-anchor="middle" font-family="Bangers" font-size="18" fill="#18181b">🏢 LOCAL ISP</text>
+            <text x="280" y="88" text-anchor="middle" font-family="Bangers" font-size="14" fill="#06d6a0">DATA CENTER</text>
+            <text x="280" y="112" text-anchor="middle" font-family="Bangers" font-size="12" fill="#18181b">($0 Cost to ISP!)</text>
+          </svg>`;
+
+        case 'isp_basement':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="20" y="30" width="120" height="95" rx="8" fill="#e50914" stroke="#18181b" stroke-width="3"/>
+            <text x="80" y="72" text-anchor="middle" font-family="Bangers" font-size="16" fill="#ffffff">OCA IN YOUR ISP</text>
+            <text x="80" y="95" text-anchor="middle" font-family="Bangers" font-size="13" fill="#ffd166">70%+ LOCAL TRAFFIC</text>
+            <line x1="140" y1="78" x2="235" y2="78" stroke="#06d6a0" stroke-width="6"/>
+            <text x="187" y="65" text-anchor="middle" font-family="Bangers" font-size="14" fill="#18181b">3 MILES!</text>
+            <polygon points="235,65 280,30 325,65 325,125 235,125" fill="#ffd166" stroke="#18181b" stroke-width="3"/>
+            <text x="280" y="98" text-anchor="middle" font-family="Bangers" font-size="15" fill="#18181b">🏠 YOUR HOME</text>
+          </svg>`;
+
+        case 'night_oracle':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="15" y="15" width="230" height="120" rx="12" fill="#1e1b4b" stroke="#18181b" stroke-width="3"/>
+            <!-- Moon & Stars -->
+            <circle cx="52" cy="45" r="16" fill="#ffd166"/>
+            <circle cx="59" cy="40" r="13" fill="#1e1b4b"/>
+            <!-- Crystal Ball -->
+            <circle cx="135" cy="74" r="34" fill="#4cc9f0" stroke="#ffffff" stroke-width="3"/>
+            <text x="135" y="72" text-anchor="middle" font-family="Bangers" font-size="13" fill="#18181b">TOMORROW 8PM:</text>
+            <text x="135" y="88" text-anchor="middle" font-family="Bangers" font-size="13" fill="#e50914">STRANGER THINGS</text>
+            <rect x="100" y="108" width="70" height="16" rx="4" fill="#ffd166"/>
+          </svg>`;
+
+        case 'night_fill':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="25" y="30" width="210" height="36" rx="8" fill="#18181b"/>
+            <rect x="30" y="35" width="195" height="26" rx="5" fill="#06d6a0"/>
+            <text x="130" y="53" text-anchor="middle" font-family="Bangers" font-size="15" fill="#18181b">2:00 AM DOWNLOAD: 100%</text>
+            <rect x="45" y="80" width="170" height="48" rx="8" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="130" y="110" text-anchor="middle" font-family="Bangers" font-size="15" fill="#e50914">PRE-CACHED ON NVMe SSD!</text>
+          </svg>`;
+
+        case 'oca_ready':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="55" y="20" width="150" height="110" rx="10" fill="#e50914" stroke="#18181b" stroke-width="3.5"/>
+            <text x="130" y="58" text-anchor="middle" font-family="Bangers" font-size="20" fill="#ffffff">OCA BOX #42</text>
+            <rect x="75" y="72" width="110" height="36" rx="6" fill="#06d6a0" stroke="#18181b" stroke-width="2.5"/>
+            <text x="130" y="96" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">✓ 100% READY!</text>
+          </svg>`;
+
+        case 'ping_aws':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="20" y="45" width="75" height="60" rx="8" fill="#18181b" stroke="#ffffff" stroke-width="2.5"/>
+            <text x="57" y="80" text-anchor="middle" font-family="Bangers" font-size="16" fill="#ffd166">📺 TV</text>
+            <path d="M100 75 L155 75" stroke="#e50914" stroke-width="4" stroke-dasharray="6,4"/>
+            <rect x="160" y="40" width="80" height="70" rx="10" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="200" y="72" text-anchor="middle" font-family="Bangers" font-size="15" fill="#18181b">☁️ AWS ZUUL</text>
+            <text x="200" y="92" text-anchor="middle" font-family="Bangers" font-size="12" fill="#06d6a0">AUTH OK!</text>
+          </svg>`;
+
+        case 'steering_map':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="20" y="20" width="220" height="110" rx="10" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <circle cx="75" cy="75" r="26" fill="#06d6a0" stroke="#18181b" stroke-width="2.5"/>
+            <text x="75" y="73" text-anchor="middle" font-family="Bangers" font-size="12" fill="#18181b">OCA #42</text>
+            <text x="75" y="88" text-anchor="middle" font-family="Bangers" font-size="11" fill="#18181b">4ms • BEST!</text>
+            <circle cx="175" cy="75" r="24" fill="#ffd166" stroke="#18181b" stroke-width="2.5"/>
+            <text x="175" y="73" text-anchor="middle" font-family="Bangers" font-size="12" fill="#18181b">OCA #43</text>
+            <text x="175" y="88" text-anchor="middle" font-family="Bangers" font-size="11" fill="#18181b">12ms • BACKUP</text>
+          </svg>`;
+
+        case 'manifest_scroll':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="45" y="18" width="170" height="114" rx="8" fill="#fef08a" stroke="#18181b" stroke-width="3"/>
+            <text x="130" y="44" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">📜 PLAYBACK MANIFEST</text>
+            <text x="130" y="68" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="bold" fill="#e50914">1. https://oca42.isp/c1.m4s</text>
+            <text x="130" y="88" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="bold" fill="#18181b">2. https://oca43.ixp/c1.m4s</text>
+            <text x="130" y="112" text-anchor="middle" font-family="Bangers" font-size="13" fill="#06d6a0">DRM KEY + CHUNK MENU</text>
+          </svg>`;
+
+        case 'direct_stream':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="25" y="30" width="95" height="90" rx="10" fill="#e50914" stroke="#18181b" stroke-width="3.5"/>
+            <text x="72" y="72" text-anchor="middle" font-family="Bangers" font-size="17" fill="#ffffff">OCA #42</text>
+            <text x="72" y="94" text-anchor="middle" font-family="Bangers" font-size="12" fill="#ffd166">(3 MILES AWAY)</text>
+            <!-- High speed stream chunks -->
+            <rect x="135" y="60" width="32" height="26" rx="4" fill="#06d6a0" stroke="#18181b" stroke-width="2"/>
+            <rect x="175" y="60" width="32" height="26" rx="4" fill="#06d6a0" stroke="#18181b" stroke-width="2"/>
+            <rect x="215" y="60" width="32" height="26" rx="4" fill="#06d6a0" stroke="#18181b" stroke-width="2"/>
+            <rect x="260" y="30" width="80" height="90" rx="10" fill="#18181b" stroke="#ffffff" stroke-width="3"/>
+            <text x="300" y="80" text-anchor="middle" font-family="Bangers" font-size="18" fill="#ffd166">📺 4K TV</text>
+          </svg>`;
+
+        case 'tadum_screen':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="50" y="18" width="260" height="114" rx="12" fill="#090d16" stroke="#18181b" stroke-width="4"/>
+            <text x="180" y="82" text-anchor="middle" font-family="Bangers" font-size="44" fill="#e50914">TA-DUM!!</text>
+            <text x="180" y="112" text-anchor="middle" font-family="Bangers" font-size="15" fill="#06d6a0">PLAYBACK STARTED IN 190ms!</text>
+          </svg>`;
+
+        case 'client_brain':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="30" y="25" width="130" height="100" rx="10" fill="#18181b" stroke="#ffffff" stroke-width="3"/>
+            <text x="95" y="65" text-anchor="middle" font-family="Bangers" font-size="18" fill="#ffd166">🧠 SMART TV</text>
+            <text x="95" y="90" text-anchor="middle" font-family="Bangers" font-size="14" fill="#06d6a0">"I PICK THE QUALITY!"</text>
+            <rect x="200" y="25" width="130" height="100" rx="10" fill="#e50914" stroke="#18181b" stroke-width="3"/>
+            <text x="265" y="65" text-anchor="middle" font-family="Bangers" font-size="18" fill="#ffffff">🧊 OCA SERVER</text>
+            <text x="265" y="90" text-anchor="middle" font-family="Bangers" font-size="14" fill="#ffd166">"I JUST SERVE CHUNKS!"</text>
+          </svg>`;
+
+        case 'buffer_bucket':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="40" y="35" width="280" height="80" rx="12" fill="#ffffff" stroke="#18181b" stroke-width="3.5"/>
+            <rect x="48" y="43" width="50" height="64" rx="6" fill="#06d6a0" stroke="#18181b" stroke-width="2"/>
+            <rect x="104" y="43" width="50" height="64" rx="6" fill="#06d6a0" stroke="#18181b" stroke-width="2"/>
+            <rect x="160" y="43" width="50" height="64" rx="6" fill="#06d6a0" stroke="#18181b" stroke-width="2"/>
+            <rect x="216" y="43" width="50" height="64" rx="6" fill="#ffd166" stroke="#18181b" stroke-width="2"/>
+            <text x="180" y="26" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">FORWARD BUFFER BUCKET (CHUNKS READY AHEAD)</text>
+          </svg>`;
+
+        case 'wifi_villain':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="35" y="30" width="190" height="90" rx="10" fill="#18181b" stroke="#e50914" stroke-width="3.5"/>
+            <text x="130" y="68" text-anchor="middle" font-family="Bangers" font-size="20" fill="#e50914">⚠️ WI-FI CONGESTION!</text>
+            <text x="130" y="96" text-anchor="middle" font-family="Bangers" font-size="14" fill="#ffd166">60 Mbps ➔ 4 Mbps</text>
+          </svg>`;
+
+        case 'abr_switch':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="20" y="40" width="65" height="70" rx="6" fill="#e50914" stroke="#18181b" stroke-width="2.5"/>
+            <text x="52" y="80" text-anchor="middle" font-family="Bangers" font-size="16" fill="#ffffff">4K</text>
+            <rect x="97" y="55" width="65" height="55" rx="6" fill="#4cc9f0" stroke="#18181b" stroke-width="2.5"/>
+            <text x="130" y="88" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">720p</text>
+            <rect x="175" y="40" width="65" height="70" rx="6" fill="#e50914" stroke="#18181b" stroke-width="2.5"/>
+            <text x="207" y="80" text-anchor="middle" font-family="Bangers" font-size="16" fill="#ffffff">4K</text>
+            <text x="130" y="28" text-anchor="middle" font-family="Bangers" font-size="14" fill="#18181b">ZERO PAUSE BETWEEN CHUNKS!</text>
+          </svg>`;
+
+        case 'back_to_4k':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="35" y="28" width="190" height="94" rx="12" fill="#18181b" stroke="#ffd166" stroke-width="3.5"/>
+            <text x="130" y="72" text-anchor="middle" font-family="Bangers" font-size="22" fill="#06d6a0">✨ 4K ULTRA HD</text>
+            <text x="130" y="98" text-anchor="middle" font-family="Bangers" font-size="14" fill="#ffffff">0 SPINNING WHEELS!</text>
+          </svg>`;
+
+        case 'two_screens':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="20" y="25" width="145" height="100" rx="8" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="92" y="52" text-anchor="middle" font-family="Bangers" font-size="14" fill="#e50914">COMEDY LOVER'S SCREEN</text>
+            <text x="92" y="88" text-anchor="middle" font-size="28">😂🎭</text>
+            <rect x="195" y="25" width="145" height="100" rx="8" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="267" y="52" text-anchor="middle" font-family="Bangers" font-size="14" fill="#8338ec">ROMANCE LOVER'S SCREEN</text>
+            <text x="267" y="88" text-anchor="middle" font-size="28">❤️🌹</text>
+          </svg>`;
+
+        case 'artwork_artist':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="30" y="25" width="300" height="100" rx="10" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="180" y="58" text-anchor="middle" font-family="Bangers" font-size="19" fill="#18181b">🎨 AVA VISUAL ANALYSIS + CONTEXTUAL BANDITS</text>
+            <text x="180" y="92" text-anchor="middle" font-family="Bangers" font-size="15" fill="#e50914">SAME MOVIE • PERSONALIZED THUMBNAIL IN 50ms!</text>
+          </svg>`;
+
+        case 'binge_prefetch':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="25" y="28" width="145" height="94" rx="8" fill="#18181b" stroke="#ffffff" stroke-width="2.5"/>
+            <text x="97" y="68" text-anchor="middle" font-family="Bangers" font-size="16" fill="#ffffff">EPISODE 1 CREDITS</text>
+            <text x="97" y="94" text-anchor="middle" font-family="Bangers" font-size="13" fill="#ffd166">NEXT IN 5... 4... 3...</text>
+            <path d="M175 75 L205 75" stroke="#06d6a0" stroke-width="5"/>
+            <rect x="210" y="28" width="125" height="94" rx="8" fill="#06d6a0" stroke="#18181b" stroke-width="3"/>
+            <text x="272" y="68" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">EPISODE 2 CHUNK #1</text>
+            <text x="272" y="94" text-anchor="middle" font-family="Bangers" font-size="13" fill="#18181b">ALREADY PREFETCHED!</text>
+          </svg>`;
+
+        case 'binge_happy':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="45" y="25" width="270" height="100" rx="12" fill="#18181b" stroke="#ffd166" stroke-width="3.5"/>
+            <text x="180" y="72" text-anchor="middle" font-family="Bangers" font-size="24" fill="#ffd166">🍿 0.0 SECOND TRANSITION!</text>
+            <text x="180" y="100" text-anchor="middle" font-family="Bangers" font-size="15" fill="#06d6a0">BINGE ENGINE AT FULL SPEED</text>
+          </svg>`;
+
+        case 'chaos_monkey_attack':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="35" y="25" width="130" height="100" rx="10" fill="#ffd166" stroke="#18181b" stroke-width="3"/>
+            <text x="100" y="68" text-anchor="middle" font-size="34">🐒🔧</text>
+            <text x="100" y="105" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">CHAOS MONKEY</text>
+            <rect x="195" y="25" width="130" height="100" rx="10" fill="#e50914" stroke="#18181b" stroke-width="3"/>
+            <text x="260" y="68" text-anchor="middle" font-family="Bangers" font-size="20" fill="#ffffff">💥 SERVER #409</text>
+            <text x="260" y="95" text-anchor="middle" font-family="Bangers" font-size="14" fill="#ffd166">UNPLUGGED AT 10 AM!</text>
+          </svg>`;
+
+        case 'calm_engineer':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="35" y="25" width="290" height="100" rx="10" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="180" y="66" text-anchor="middle" font-family="Bangers" font-size="20" fill="#18181b">☕ AUTO-HEALING MICROSERVICES</text>
+            <text x="180" y="96" text-anchor="middle" font-family="Bangers" font-size="15" fill="#06d6a0">SERVER #410 INSTANTLY TAKES OVER IN 2ms!</text>
+          </svg>`;
+
+        case 'graceful_fallback':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="30" y="25" width="300" height="100" rx="10" fill="#fef08a" stroke="#18181b" stroke-width="3"/>
+            <text x="180" y="64" text-anchor="middle" font-family="Bangers" font-size="19" fill="#18181b">🛡️ CIRCUIT BREAKER FALLBACK</text>
+            <text x="180" y="94" text-anchor="middle" font-family="Bangers" font-size="15" fill="#e50914">AI SLOW? SHOW PRE-CACHED "TOP 10 TODAY" INSTEAD!</text>
+          </svg>`;
+
+        case 'chaos_kong':
+        default:
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="25" y="25" width="140" height="100" rx="10" fill="#18181b" stroke="#e50914" stroke-width="3"/>
+            <text x="95" y="68" text-anchor="middle" font-family="Bangers" font-size="18" fill="#e50914">🦍 US-EAST DOWN</text>
+            <text x="95" y="94" text-anchor="middle" font-family="Bangers" font-size="13" fill="#ffffff">(SIMULATED OUTAGE)</text>
+            <path d="M170 75 L200 75" stroke="#18181b" stroke-width="4"/>
+            <rect x="205" y="25" width="130" height="100" rx="10" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="270" y="68" text-anchor="middle" font-family="Bangers" font-size="18" fill="#06d6a0">🌎 US-WEST LIVE!</text>
+            <text x="270" y="94" text-anchor="middle" font-family="Bangers" font-size="13" fill="#18181b">0 DROPPED STREAMS!</text>
+          </svg>`;
+      }
+    }
+
+    // =========================================================================
+    // INTERACTIVE LAB WIDGET FOR EACH EPISODE
+    // =========================================================================
+    function renderEpisodeLab(epId) {
+      if (epId === 1) {
+        const actions = {
+          login: {
+            label: "🔑 Log In & Pick Profile",
+            plane: "AWS Control Plane (Hotel Front Desk)",
+            badgeClass: "bg-[#4cc9f0] text-zinc-900",
+            payload: "~4 KB JSON",
+            explanation: "Logging in, verifying your password, and loading your 'Who's Watching?' avatars happens 100% on AWS microservices (Control Plane). Zero video servers are touched!"
+          },
+          browse: {
+            label: "🖼️ Scroll Homepage Rows",
+            plane: "AWS Control Plane (Hotel Front Desk)",
+            badgeClass: "bg-[#4cc9f0] text-zinc-900",
+            payload: "~85 KB Metadata + Thumbnails",
+            explanation: "Scrolling rows talks to AWS EVCache and recommendation services to assemble your personalized categories in milliseconds."
+          },
+          play: {
+            label: "▶ Press Play on 4K Movie",
+            plane: "Open Connect CDN (Local ISP Mini-Fridge!)",
+            badgeClass: "bg-[#e50914] text-white",
+            payload: "~18,000,000 KB (18 GB Stream)",
+            explanation: "BOOM! AWS hands over a tiny manifest address, and your TV streams all 18 Gigabytes of 4K video directly from the Open Connect Appliance sitting inside your local ISP!"
+          }
+        };
+        const cur = actions[ep1SelectedAction] || actions.play;
+        return `
+          <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="bg-amber-300 text-zinc-900 font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+                🕹️ EPISODE 1 INTERACTIVE LAB: WHO HANDLES YOUR ACTION?
+              </span>
+              <span class="text-xs text-zinc-300 font-bold">Click an action below to trace where it goes:</span>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <button onclick="setEp1Action('login')" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm ${ep1SelectedAction==='login' ? 'bg-[#ffd166] text-zinc-900' : 'bg-zinc-800 text-white'}">🔑 1. Log In & Pick Profile</button>
+              <button onclick="setEp1Action('browse')" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm ${ep1SelectedAction==='browse' ? 'bg-[#ffd166] text-zinc-900' : 'bg-zinc-800 text-white'}">🖼️ 2. Scroll Homepage Rows</button>
+              <button onclick="setEp1Action('play')" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm ${ep1SelectedAction==='play' ? 'bg-[#ffd166] text-zinc-900' : 'bg-zinc-800 text-white'}">▶ 3. Press Play (4K Movie)</button>
+            </div>
+            <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Handled By:</div>
+                <div class="inline-block mt-1 px-3 py-1 rounded-lg font-extrabold text-sm ${cur.badgeClass}">${cur.plane}</div>
+              </div>
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Data Size Transferred:</div>
+                <div class="font-mono-code text-lg text-amber-300 font-bold mt-1">${cur.payload}</div>
+              </div>
+              <div class="text-xs sm:text-sm text-zinc-200 font-medium">${cur.explanation}</div>
+            </div>
+          </div>`;
+      }
+
+      if (epId === 2) {
+        const scenes = {
+          dialog: {
+            title: "☕ Quiet Coffee Shop Dialogue",
+            rawBitrate: "16.0 Mbps (Standard Naive 4K)",
+            vmafBitrate: "6.2 Mbps (VMAF Per-Shot Optimized)",
+            savings: "61% Bandwidth Saved!",
+            chunks: "Chunk #104 (2.0 sec) • VMAF Score: 97/100",
+            desc: "Because the camera is still and only two actors' lips are moving, Chef Encoder + VMAF shrinks this 4K chunk to just 6.2 Mbps with zero visible loss!"
+          },
+          action: {
+            title: "🚀 Sci-Fi Spaceship Explosion",
+            rawBitrate: "16.0 Mbps (Standard Naive 4K)",
+            vmafBitrate: "14.8 Mbps (VMAF High-Motion Boost)",
+            savings: "Crisp Detail Preserved!",
+            chunks: "Chunk #105 (2.0 sec) • VMAF Score: 95/100",
+            desc: "Millions of sparks and fast motion! VMAF allocates extra bits to this 2-second chunk so explosions never look blocky."
+          },
+          animation: {
+            title: "🎨 2D Flat-Color Cartoon",
+            rawBitrate: "12.0 Mbps (Standard Naive 4K)",
+            vmafBitrate: "3.4 Mbps (VMAF Ultra-Compact)",
+            savings: "71% Bandwidth Saved!",
+            chunks: "Chunk #106 (2.0 sec) • VMAF Score: 98/100",
+            desc: "Flat cartoon colors compress beautifully! Per-title encoding delivers razor-sharp 4K animation using a fraction of the data."
+          }
+        };
+        const sc = scenes[ep2SelectedScene] || scenes.action;
+        return `
+          <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="bg-[#06d6a0] text-zinc-900 font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+                🕹️ EPISODE 2 INTERACTIVE LAB: CHEF ENCODER'S VMAF BLENDER
+              </span>
+              <span class="text-xs text-zinc-300 font-bold">Pick a 2-second movie scene to inspect how VMAF optimizes it:</span>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <button onclick="setEp2Scene('dialog')" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm ${ep2SelectedScene==='dialog' ? 'bg-[#06d6a0] text-zinc-900' : 'bg-zinc-800 text-white'}">☕ Quiet Dialogue Scene</button>
+              <button onclick="setEp2Scene('action')" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm ${ep2SelectedScene==='action' ? 'bg-[#06d6a0] text-zinc-900' : 'bg-zinc-800 text-white'}">🚀 Spaceship Explosion</button>
+              <button onclick="setEp2Scene('animation')" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm ${ep2SelectedScene==='animation' ? 'bg-[#06d6a0] text-zinc-900' : 'bg-zinc-800 text-white'}">🎨 2D Cartoon Scene</button>
+            </div>
+            <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Naive Bitrate vs. VMAF Smart Bitrate</div>
+                <div class="text-xs text-red-300 line-through mt-1">${sc.rawBitrate}</div>
+                <div class="font-mono-code text-base text-emerald-400 font-bold">${sc.vmafBitrate}</div>
+                <span class="inline-block mt-1 bg-amber-300 text-zinc-900 text-xs font-extrabold px-2 py-0.5 rounded">${sc.savings}</span>
+              </div>
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Chunk Output</div>
+                <div class="font-mono-code text-xs text-amber-200 mt-1">${sc.chunks}</div>
+                <div class="text-xs text-zinc-300 mt-1">Formats: HLS (.ts/.m4s) & DASH</div>
+              </div>
+              <div class="text-xs sm:text-sm text-zinc-200 font-medium">${sc.desc}</div>
+            </div>
+          </div>`;
+      }
+
+      if (epId === 3) {
+        const isNight = ep3Hour === 2;
+        return `
+          <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="bg-[#bdb2ff] text-zinc-900 font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+                🕹️ EPISODE 3 INTERACTIVE LAB: 2:00 AM RESTOCK VS. 8:00 PM PRIME TIME
+              </span>
+              <span class="text-xs text-zinc-300 font-bold">Toggle the clock to see what your ISP's Open Connect Box is doing:</span>
+            </div>
+            <div class="flex flex-wrap gap-3 mb-4">
+              <button onclick="setEp3Time(2)" class="comic-btn px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm ${isNight ? 'bg-amber-300 text-zinc-900' : 'bg-zinc-800 text-white'}">🌙 2:00 AM (Off-Peak Night Shift)</button>
+              <button onclick="setEp3Time(20)" class="comic-btn px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm ${!isNight ? 'bg-[#e50914] text-white' : 'bg-zinc-800 text-white'}">🍿 8:00 PM (Friday Prime Time)</button>
+            </div>
+            <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Backbone Highway Traffic</div>
+                <div class="font-comic-title text-2xl mt-1 ${isNight ? 'text-emerald-400' : 'text-amber-300'}">
+                  ${isNight ? '12% Busy (Wide Open!)' : '94% Busy (Peak Rush Hour!)'}
+                </div>
+              </div>
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">OCA Box #42 Activity</div>
+                <div class="font-bold text-sm mt-1 text-white">
+                  ${isNight ? '📥 Downloading predicted new episodes from origin into local NVMe drives' : '📤 Streaming pre-cached 4K chunks locally to 40,000 neighborhood TVs!'}
+                </div>
+              </div>
+              <div class="text-xs sm:text-sm text-zinc-200">
+                ${isNight ? 'Because everyone is asleep at 2:00 AM, Netflix uses unused ISP capacity to pre-fill local OCA servers with tomorrow’s top hits.' : 'At 8:00 PM, zero video has to cross the country! Your neighborhood streams straight from the local OCA box stocked last night.'}
+              </div>
+            </div>
+          </div>`;
+      }
+
+      if (epId === 4) {
+        const steps = [
+          { ms: "0–45 ms", title: "Step 1: TV Calls AWS Zuul Gatekeeper", detail: "Your TV sends an HTTPS Play request to AWS Control Plane. AWS verifies your account and DRM capability." },
+          { ms: "45–110 ms", title: "Step 2: Steering Service Checks Nearby OCAs", detail: "AWS checks BGP network distance, server health, and confirms OCA Box #42 (3 miles away) has your show cached." },
+          { ms: "110–155 ms", title: "Step 3: Signed Manifest Map Returned", detail: "AWS sends a tiny JSON/XML Manifest back to your TV listing Box #42 as Primary and Box #43 as Backup." },
+          { ms: "155–195 ms", title: "Step 4: Direct 4ms Stream From Local OCA!", detail: "Your TV fetches Chunk #1 straight from OCA Box #42 inside your ISP. TA-DUM! Playback begins!" }
+        ];
+        const st = steps[ep4HandshakeStep - 1] || steps[3];
+        return `
+          <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="bg-[#4cc9f0] text-zinc-900 font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+                🕹️ EPISODE 4 INTERACTIVE LAB: STEP-BY-STEP 200ms HANDSHAKE TRACER
+              </span>
+              <span class="text-xs text-zinc-300 font-bold">Click each step of the 200ms journey:</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+              <button onclick="setEp4Step(1)" class="comic-btn p-2.5 rounded-xl font-bold text-xs ${ep4HandshakeStep===1 ? 'bg-[#4cc9f0] text-zinc-900' : 'bg-zinc-800 text-white'}">1. Call AWS (0ms)</button>
+              <button onclick="setEp4Step(2)" class="comic-btn p-2.5 rounded-xl font-bold text-xs ${ep4HandshakeStep===2 ? 'bg-[#4cc9f0] text-zinc-900' : 'bg-zinc-800 text-white'}">2. Find OCA (80ms)</button>
+              <button onclick="setEp4Step(3)" class="comic-btn p-2.5 rounded-xl font-bold text-xs ${ep4HandshakeStep===3 ? 'bg-[#4cc9f0] text-zinc-900' : 'bg-zinc-800 text-white'}">3. Manifest (140ms)</button>
+              <button onclick="setEp4Step(4)" class="comic-btn p-2.5 rounded-xl font-bold text-xs ${ep4HandshakeStep===4 ? 'bg-[#06d6a0] text-zinc-900' : 'bg-zinc-800 text-white'}">4. Stream! (190ms)</button>
+            </div>
+            <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <span class="bg-amber-300 text-zinc-900 font-mono-code text-xs font-extrabold px-2.5 py-1 rounded">${st.ms}</span>
+                <h4 class="font-comic-title text-2xl text-white mt-1">${st.title}</h4>
+                <p class="text-xs sm:text-sm text-zinc-200 mt-1">${st.detail}</p>
+              </div>
+              <div class="bg-zinc-900 px-4 py-3 rounded-xl border border-zinc-700 text-center shrink-0">
+                <div class="text-[11px] text-zinc-400 uppercase font-bold">Distance to Video Server</div>
+                <div class="font-comic-title text-2xl text-emerald-400">~3 Miles (4ms)</div>
+                <div class="text-[11px] text-zinc-400">vs. 1,800 Miles (85ms) Cloud</div>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      if (epId === 5) {
+        let quality = "4K Ultra HD (15 Mbps)";
+        let badgeColor = "bg-[#06d6a0] text-zinc-900";
+        let note = "Your Wi-Fi has plenty of headroom! TV Butler grabs crystal-clear 4K HDR 2-second chunks and keeps 24 seconds in the buffer bucket.";
+        if (ep5WifiMbps < 5) {
+          quality = "480p SD Saver (1.5 Mbps)";
+          badgeColor = "bg-amber-300 text-zinc-900";
+          note = "Heavy Wi-Fi congestion detected! TV Butler smoothly downshifts to tiny 480p chunks so playback NEVER freezes with a spinning wheel!";
+        } else if (ep5WifiMbps < 18) {
+          quality = "1080p Full HD (5.5 Mbps)";
+          badgeColor = "bg-[#4cc9f0] text-zinc-900";
+          note = "Moderate Wi-Fi speed! TV Butler selects crisp 1080p chunks to keep your forward buffer bucket safely full.";
+        }
+        return `
+          <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="bg-[#ffd166] text-zinc-900 font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+                🕹️ EPISODE 5 INTERACTIVE LAB: LIVE ADAPTIVE BITRATE (ABR) SIMULATOR
+              </span>
+              <span class="text-xs text-zinc-300 font-bold">Simulate Wi-Fi speed changes and watch your TV adjust quality:</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+              <button onclick="setEp5Wifi(3)" class="comic-btn px-3.5 py-2 rounded-xl font-bold text-xs bg-red-500 text-white">🎮 Roommate Downloads 90GB Game (3 Mbps)</button>
+              <button onclick="setEp5Wifi(10)" class="comic-btn px-3.5 py-2 rounded-xl font-bold text-xs bg-sky-400 text-zinc-900">🍕 Microwave Interference (10 Mbps)</button>
+              <button onclick="setEp5Wifi(55)" class="comic-btn px-3.5 py-2 rounded-xl font-bold text-xs bg-emerald-400 text-zinc-900">🚀 Clear Fiber Wi-Fi (55 Mbps)</button>
+            </div>
+            <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Live Home Wi-Fi Speed</div>
+                <div class="font-mono-code text-2xl text-amber-300 font-bold mt-1">${ep5WifiMbps} Mbps</div>
+              </div>
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Client Player Picks Next 2s Chunk:</div>
+                <div class="inline-block mt-1 px-3 py-1 rounded-lg font-extrabold text-sm ${badgeColor}">${quality}</div>
+              </div>
+              <div class="text-xs sm:text-sm text-zinc-200 font-medium">${note}</div>
+            </div>
+          </div>`;
+      }
+
+      if (epId === 6) {
+        const personas = {
+          comedy: {
+            profile: "😂 Comedy & Sitcom Fan",
+            posterTitle: "Stranger Things — 'Scoops Ahoy!' Poster",
+            visual: "🍦 Steve & Dustin in goofy sailor hats eating ice cream",
+            reason: "Your watch history loves lighthearted banter, so AVA & Contextual Bandits pick the funniest character moment!"
+          },
+          thriller: {
+            profile: "🔦 Sci-Fi & Horror Thriller Fan",
+            posterTitle: "Stranger Things — 'The Upside Down' Poster",
+            visual: "🌩️ Eerie red lightning over a dark forest silhouette",
+            reason: "You click supernatural mysteries fast, so Netflix highlights suspenseful lighting and atmosphere!"
+          },
+          drama: {
+            profile: "❤️ Character Drama & Friendship Fan",
+            posterTitle: "Stranger Things — 'The Bike Squad' Poster",
+            visual: "🚲 Close-up emotional group hug with Eleven and friends",
+            reason: "You gravitate toward emotional ensemble stories, so the thumbnail emphasizes human connection!"
+          }
+        };
+        const p = personas[ep6Persona] || personas.comedy;
+        return `
+          <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="bg-pink-400 text-zinc-900 font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+                🕹️ EPISODE 6 INTERACTIVE LAB: THE PERSONALIZED THUMBNAIL MACHINE
+              </span>
+              <span class="text-xs text-zinc-300 font-bold">Switch viewer taste profiles for the exact same show:</span>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <button onclick="setEp6Persona('comedy')" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm ${ep6Persona==='comedy' ? 'bg-amber-300 text-zinc-900' : 'bg-zinc-800 text-white'}">😂 Comedy Lover Profile</button>
+              <button onclick="setEp6Persona('thriller')" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm ${ep6Persona==='thriller' ? 'bg-amber-300 text-zinc-900' : 'bg-zinc-800 text-white'}">🔦 Sci-Fi Thriller Profile</button>
+              <button onclick="setEp6Persona('drama')" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm ${ep6Persona==='drama' ? 'bg-amber-300 text-zinc-900' : 'bg-zinc-800 text-white'}">❤️ Drama & Heart Profile</button>
+            </div>
+            <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <div class="bg-zinc-900 p-3 rounded-xl border-2 border-amber-300 text-center">
+                <div class="text-xs text-amber-300 font-bold uppercase">${p.posterTitle}</div>
+                <div class="text-sm font-extrabold text-white mt-2">${p.visual}</div>
+              </div>
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Active Viewer Persona</div>
+                <div class="font-bold text-base text-emerald-400 mt-1">${p.profile}</div>
+                <div class="text-xs text-zinc-400 mt-1">+ Next Episode Prefetch: ARMED ⚡</div>
+              </div>
+              <div class="text-xs sm:text-sm text-zinc-200 font-medium">${p.reason}</div>
+            </div>
+          </div>`;
+      }
+
+      // Bonus Episode 7: Chaos Monkey Lab
+      return `
+        <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <span class="bg-[#e50914] text-white font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+              🕹️ BONUS INTERACTIVE LAB: UNLEASH CHAOS MONKEY!
+            </span>
+            <span class="text-xs text-amber-300 font-mono-code font-bold">Servers Terminated & Auto-Healed: ${ep7ChaosCount}</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-3 mb-4">
+            <button onclick="triggerChaosMonkey()" class="comic-btn bg-[#ffd166] hover:bg-amber-300 text-zinc-900 font-comic-title text-xl px-5 py-2.5 rounded-xl">
+              🐒 Wrench Attack! Kill a Live Server Now
+            </button>
+            <span class="text-xs text-zinc-300">Watch whether your 4K movie drops even a single frame!</span>
+          </div>
+          <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+            <div>
+              <div class="text-xs text-zinc-400 uppercase font-bold">Chaos Event Log</div>
+              <div class="font-mono-code text-xs sm:text-sm text-amber-300 font-bold mt-1">
+                ${ep7MonkeyActive ? `💥 Instance #${400 + ep7ChaosCount} unplugged! Circuit breaker routed to twin instance in 3ms.` : 'All microservices green. Click the button above to test resilience!'}
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-zinc-400 uppercase font-bold">OCA Video Stream Status</div>
+              <div class="font-comic-title text-2xl text-emerald-400 mt-1">100% UNINTERRUPTED (60 FPS)</div>
+            </div>
+            <div class="text-xs sm:text-sm text-zinc-200">
+              Because your TV already has the manifest and streams directly from local ISP Open Connect boxes (with backup OCA URLs pre-listed), cloud microservice blips never interrupt an active stream!
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // =========================================================================
+    // RENDER EPISODES & NAVIGATION
+    // =========================================================================
+    function renderNavigationAndCover() {
+      // 1. Drawer episode buttons
+      const drawerGrid = document.getElementById('drawerEpisodeGrid');
+      const coverCards = document.getElementById('coverEpisodeCards');
+      const pillBar = document.getElementById('episodePillBar');
+
+      let drawerHtml = `
+        <button onclick="selectEpisode(0); toggleEpisodesDrawer();" class="p-2.5 rounded-lg border-2 text-left transition ${currentEpisode===0 && !readAllMode ? 'bg-amber-300 text-zinc-900 border-white font-extrabold' : 'bg-zinc-800 text-white border-zinc-700 hover:bg-zinc-700'}">
+          <div class="text-[10px] uppercase opacity-75">Intro</div>
+          <div class="font-comic-title text-base">🏠 Cover Page</div>
+        </button>`;
+
+      let coverHtml = '';
+      let pillsHtml = `
+        <button onclick="selectEpisode(0)" class="px-3 py-1.5 rounded-lg text-xs font-extrabold border-2 border-zinc-900 transition ${currentEpisode===0 && !readAllMode ? 'bg-zinc-900 text-amber-300' : 'bg-zinc-100 hover:bg-amber-100 text-zinc-900'}">
+          🏠 Cover
+        </button>`;
+
+      EPISODES.forEach(ep => {
+        const isActive = (!readAllMode && currentEpisode === ep.id);
+        drawerHtml += `
+          <button onclick="selectEpisode(${ep.id}); toggleEpisodesDrawer();" class="p-2.5 rounded-lg border-2 text-left transition ${isActive ? 'bg-[#e50914] text-white border-white font-extrabold' : 'bg-zinc-800 text-white border-zinc-700 hover:bg-zinc-700'}">
+            <div class="text-[10px] uppercase text-amber-300 font-bold">${ep.badge}</div>
+            <div class="font-bold text-xs truncate">${ep.title}</div>
+          </button>`;
+
+        coverHtml += `
+          <button onclick="selectEpisode(${ep.id})" class="comic-btn bg-white hover:bg-amber-50 text-left p-4 rounded-xl flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-extrabold px-2 py-0.5 rounded border border-zinc-900" style="background:${ep.color}">${ep.badge}</span>
+                <span class="text-[11px] font-bold text-zinc-500">5 Panels + Lab</span>
+              </div>
+              <h3 class="font-comic-title text-xl text-zinc-900 mt-2">${ep.title}</h3>
+              <p class="text-xs text-zinc-700 font-medium mt-1">${ep.teaser}</p>
+            </div>
+            <div class="mt-3 text-xs font-extrabold text-[#e50914] flex items-center gap-1">
+              Read ${ep.badge} →
+            </div>
+          </button>`;
+
+        pillsHtml += `
+          <button onclick="selectEpisode(${ep.id})" class="px-3 py-1.5 rounded-lg text-xs font-extrabold border-2 border-zinc-900 transition ${isActive ? 'bg-[#e50914] text-white shadow-[2px_2px_0px_#18181b]' : 'bg-white hover:bg-amber-100 text-zinc-900'}">
+            ${ep.id === 7 ? '🐒 Bonus' : 'Ep ' + ep.id}
+          </button>`;
+      });
+
+      drawerGrid.innerHTML = drawerHtml;
+      coverCards.innerHTML = coverHtml;
+      pillBar.innerHTML = pillsHtml;
+
+      // Update top badge & mode status
+      const badgeEl = document.getElementById('currentEpBadge');
+      const modeEl = document.getElementById('readingModeStatus');
+      if (readAllMode) {
+        badgeEl.textContent = 'All 1–7';
+        modeEl.textContent = '📜 Continuous Webtoon Mode (All 7 Episodes)';
+      } else if (currentEpisode === 0) {
+        badgeEl.textContent = 'Cover';
+        modeEl.textContent = '🏠 Cover + Episode 1 Preview';
+      } else {
+        badgeEl.textContent = currentEpisode === 7 ? 'Bonus' : 'Ep ' + currentEpisode;
+        modeEl.textContent = `📖 Reading Episode ${currentEpisode} of 7`;
+      }
+
+      // Show or hide cover hero section
+      const coverSec = document.getElementById('coverHeroSection');
+      if (currentEpisode === 0 || readAllMode) {
+        coverSec.classList.remove('hidden');
+      } else {
+        coverSec.classList.add('hidden');
+      }
+    }
+
+    function renderComicEpisodes() {
+      const container = document.getElementById('comicEpisodesContainer');
+      const episodesToShow = readAllMode
+        ? EPISODES
+        : (currentEpisode === 0 ? [EPISODES[0]] : EPISODES.filter(e => e.id === currentEpisode));
+
+      let html = '';
+      episodesToShow.forEach(ep => {
+        let panelsHtml = '';
+        ep.panels.forEach((p, idx) => {
+          let bubblesHtml = '';
+          p.bubbles.forEach(b => {
+            const tailClass = b.pos === 'right' ? 'tail-right ml-auto' : 'mr-auto';
+            bubblesHtml += `
+              <div class="speech-bubble ${tailClass} max-w-[92%]">
+                <span class="inline-block text-[10px] font-sans font-extrabold uppercase tracking-wider px-1.5 py-0.2 rounded bg-zinc-900 text-amber-300 mr-1">${b.speaker}:</span>
+                <span>${b.text}</span>
+              </div>`;
+          });
+
+          const nerdNoteBlock = nerdMode ? `
+            <div class="mt-3 bg-zinc-900/95 text-amber-200 text-xs p-2.5 rounded-lg border-2 border-zinc-900 font-medium leading-snug">
+              <strong class="text-white">🤓 Under the Hood:</strong> ${p.nerdNote}
+            </div>` : '';
+
+          panelsHtml += `
+            <div class="${p.span} comic-box ${p.bg} rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden">
+              <div class="halftone-bg absolute inset-0 pointer-events-none"></div>
+              <div class="relative z-10 space-y-3">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="narrator-box bg-white text-zinc-900 rounded-md">
+                    <span class="text-xs font-extrabold text-[#e50914] mr-1">#${idx + 1}</span> ${p.captionTop}
+                  </div>
+                  <span class="sfx-badge ${p.sfxColor} text-sm sm:text-base px-2.5 py-0.5 rounded shrink-0 animate-sfx">
+                    ${p.sfx}
+                  </span>
+                </div>
+                <div class="my-2 bg-white/80 rounded-xl p-2 border-2 border-zinc-900">
+                  ${getComicSvg(p.svgType)}
+                </div>
+                <div class="space-y-2.5 pt-1">
+                  ${bubblesHtml}
+                </div>
+              </div>
+              <div class="relative z-10">
+                ${nerdNoteBlock}
+              </div>
+            </div>`;
+        });
+
+        html += `
+          <article id="episode-section-${ep.id}" class="space-y-6">
+            <!-- Episode Title Banner -->
+            <div class="comic-box rounded-2xl p-5 sm:p-6 bg-white relative overflow-hidden">
+              <div class="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div class="inline-flex items-center gap-2">
+                    <span class="font-comic-title text-xl px-3 py-0.5 rounded border-2 border-zinc-900" style="background:${ep.color}">${ep.badge}</span>
+                    <span class="text-xs font-extrabold uppercase text-zinc-500">How Netflix Works Comic Series</span>
+                  </div>
+                  <h2 class="font-comic-title text-3xl sm:text-5xl text-zinc-900 mt-1">${ep.title}</h2>
+                  <p class="text-sm sm:text-base font-bold text-zinc-700">${ep.subtitle}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="toggleNerdMode()" class="comic-btn bg-amber-100 hover:bg-amber-200 text-zinc-900 text-xs font-extrabold px-3 py-2 rounded-xl">
+                    ${nerdMode ? '🙈 Hide Nerd Notes' : '🤓 Show Nerd Notes'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Comic Panel Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              ${panelsHtml}
+            </div>
+
+            <!-- Interactive Episode Mini-Lab -->
+            ${renderEpisodeLab(ep.id)}
+
+            <!-- Layman vs. Real Engineering Summary Split Card -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="comic-box-sm bg-[#fff8e6] rounded-xl p-4">
+                <div class="text-xs font-extrabold uppercase text-amber-800">🍿 In Plain English (Layman Takeaway)</div>
+                <p class="text-sm font-medium text-zinc-800 mt-1 leading-relaxed">${ep.laymanSummary}</p>
+              </div>
+              <div class="comic-box-sm bg-zinc-900 text-white rounded-xl p-4">
+                <div class="text-xs font-extrabold uppercase text-emerald-400">⚙️ Real Netflix System Design</div>
+                <p class="text-sm font-medium text-zinc-200 mt-1 leading-relaxed">${ep.techSummary}</p>
+              </div>
+            </div>
+          </article>`;
+      });
+
+      container.innerHTML = html;
+      updateBottomPager();
+    }
+
+    function updateBottomPager() {
+      const pager = document.getElementById('episodeBottomPager');
+      const prevBtn = document.getElementById('prevEpBtn');
+      const nextBtn = document.getElementById('nextEpBtn');
+      const titleEl = document.getElementById('pagerEpTitle');
+      const teaserEl = document.getElementById('pagerEpTeaser');
+
+      if (readAllMode) {
+        titleEl.textContent = "You're Viewing All 7 Episodes!";
+        teaserEl.textContent = "Ready to host this comic under your name on GitHub Pages?";
+        prevBtn.textContent = "🏠 Back to CoverOnly";
+        nextBtn.textContent = "🚀 Host on GitHub Pages →";
+        return;
+      }
+
+      const activeEp = currentEpisode === 0 ? 1 : currentEpisode;
+      const epObj = EPISODES.find(e => e.id === activeEp);
+      titleEl.textContent = `${epObj.badge}: ${epObj.title}`;
+      teaserEl.textContent = activeEp < 7
+        ? `Up Next — ${EPISODES[activeEp].badge}: ${EPISODES[activeEp].title}`
+        : `You finished the entire series! Ready to deploy it to GitHub Pages?`;
+
+      prevBtn.textContent = currentEpisode <= 1 ? "🏠 Cover Page" : `← Episode ${activeEp - 1}`;
+      nextBtn.textContent = activeEp < 7 ? `Next: ${EPISODES[activeEp].badge} →` : "🚀 Host on GitHub Pages →";
+    }
+
+    // =========================================================================
+    // QUIZ RENDERING & HANDLERS
+    // =========================================================================
+    function renderQuiz() {
+      const grid = document.getElementById('quizQuestionsGrid');
+      let score = 0;
+      let html = '';
+
+      QUIZ_QUESTIONS.forEach((item, qIdx) => {
+        const picked = quizAnswers[qIdx];
+        if (picked === item.correct) score++;
+
+        let optsHtml = '';
+        item.options.forEach((opt, oIdx) => {
+          let btnStyle = 'bg-white hover:bg-amber-100 text-zinc-900 border-zinc-900';
+          if (picked !== undefined) {
+            if (oIdx === item.correct) {
+              btnStyle = 'bg-[#06d6a0] text-zinc-900 border-zinc-900 font-extrabold';
+            } else if (oIdx === picked) {
+              btnStyle = 'bg-[#ffadad] text-zinc-900 border-zinc-900 line-through';
+            }
+          }
+          optsHtml += `
+            <button onclick="answerQuiz(${qIdx}, ${oIdx})" class="w-full text-left text-xs sm:text-sm p-2.5 rounded-lg border-2 transition ${btnStyle}">
+              ${opt}
+            </button>`;
+        });
+
+        const feedbackHtml = picked !== undefined ? `
+          <div class="mt-2 text-xs p-2 rounded border border-zinc-900 ${picked === item.correct ? 'bg-emerald-100 text-zinc-900' : 'bg-amber-100 text-zinc-900'}">
+            <strong>${picked === item.correct ? '✅ Correct!' : '💡 Not quite!'}</strong> ${item.explanation}
+          </div>` : '';
+
+        html += `
+          <div class="bg-white p-4 rounded-xl border-2 border-zinc-900 flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-sm text-zinc-900 mb-2.5">${item.q}</div>
+              <div class="space-y-1.5">${optsHtml}</div>
+            </div>
+            ${feedbackHtml}
+          </div>`;
+      });
+
+      grid.innerHTML = html;
+      document.getElementById('quizScoreDisplay').textContent = `${score} / ${QUIZ_QUESTIONS.length}`;
+    }
+
+    function answerQuiz(qIdx, oIdx) {
+      quizAnswers[qIdx] = oIdx;
+      renderQuiz();
+    }
+
+    function scrollToQuiz() {
+      const el = document.getElementById('comicQuizBox');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // =========================================================================
+    // USER ACTIONS & NAVIGATION HANDLERS
+    // =========================================================================
+    function switchMainView(view) {
+      currentView = view;
+      const comicEl = document.getElementById('viewComic');
+      const githubEl = document.getElementById('viewGithub');
+      if (view === 'github') {
+        comicEl.classList.add('hidden');
+        githubEl.classList.remove('hidden');
+        updateGithubConfig();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        githubEl.classList.add('hidden');
+        comicEl.classList.remove('hidden');
+        renderNavigationAndCover();
+        renderComicEpisodes();
+      }
+    }
+
+    function selectEpisode(epNum) {
+      readAllMode = false;
+      currentEpisode = epNum;
+      switchMainView('comic');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function enableReadAllMode() {
+      readAllMode = true;
+      currentEpisode = 1;
+      switchMainView('comic');
+      showToast('📜', 'Switched to Continuous Webtoon Mode! Scroll down to read all 7 episodes.');
+    }
+
+    function stepEpisode(delta) {
+      if (readAllMode) {
+        if (delta < 0) {
+          selectEpisode(0);
+        } else {
+          switchMainView('github');
+        }
+        return;
+      }
+      const activeEp = currentEpisode === 0 ? 1 : currentEpisode;
+      if (delta < 0) {
+        if (currentEpisode <= 1) {
+          selectEpisode(0);
+        } else {
+          selectEpisode(activeEp - 1);
+        }
+      } else {
+        if (activeEp < 7) {
+          selectEpisode(activeEp + 1);
+        } else {
+          switchMainView('github');
+        }
+      }
+    }
+
+    function toggleEpisodesDrawer() {
+      const dr = document.getElementById('episodesDrawer');
+      dr.classList.toggle('hidden');
+    }
+
+    function toggleNerdMode() {
+      nerdMode = !nerdMode;
+      document.getElementById('nerdModeLabel').textContent = nerdMode ? 'ON' : 'OFF';
+      renderComicEpisodes();
+      showToast('🤓', nerdMode ? "Director's & Engineering Notes enabled!" : "Director's Notes hidden for pure comic reading!");
+    }
+
+    // Mini-Lab interactive setters
+    function setEp1Action(act) {
+      ep1SelectedAction = act;
+      renderComicEpisodes();
+    }
+    function setEp2Scene(sc) {
+      ep2SelectedScene = sc;
+      renderComicEpisodes();
+    }
+    function setEp3Time(hr) {
+      ep3Hour = hr;
+      renderComicEpisodes();
+    }
+    function setEp4Step(st) {
+      ep4HandshakeStep = st;
+      renderComicEpisodes();
+    }
+    function setEp5Wifi(mbps) {
+      ep5WifiMbps = mbps;
+      renderComicEpisodes();
+    }
+    function setEp6Persona(p) {
+      ep6Persona = p;
+      renderComicEpisodes();
+    }
+    function triggerChaosMonkey() {
+      ep7ChaosCount++;
+      ep7MonkeyActive = true;
+      renderComicEpisodes();
+      showToast('🐒', `Chaos Monkey unplugged Server #${400 + ep7ChaosCount}! Auto-failover kept your stream at 60 FPS!`);
+    }
+
+    // =========================================================================
+    // GITHUB PAGES CUSTOMIZER & EXPORTERS
+    // =========================================================================
+    function updateGithubConfig() {
+      const author = (document.getElementById('inputAuthorName').value || 'Nishant Rai').trim();
+      const user = (document.getElementById('inputGithubUser').value || 'nishantrai').trim().toLowerCase().replace(/\s+/g, '');
+      const repo = (document.getElementById('inputRepoName').value || 'how-netflix-works').trim().toLowerCase().replace(/\s+/g, '-');
+
+      document.getElementById('authorHeroName').textContent = author;
+      document.getElementById('footerAuthorName').textContent = author.toUpperCase();
+      document.getElementById('livePagesUrlPreview').textContent = `https://${user}.github.io/${repo}/`;
+      document.getElementById('stepRepoName1').textContent = repo;
+      document.getElementById('rootDomainHint').textContent = `https://${user}.github.io/`;
+      document.getElementById('rootRepoHint').textContent = `${user}.github.io`;
+
+      const gitBlock = `mkdir ${repo} && cd ${repo}
+# Move your downloaded index.html & README.md here
+git init
+git branch -M main
+git add index.html README.md
+git commit -m "Launch How Netflix Works interactive comic by ${author}"
+git remote add origin https://github.com/${user}/${repo}.git
+git push -u origin main`;
+      document.getElementById('gitCommandsBlock').textContent = gitBlock;
+    }
+
+    function copyTextSafe(text, successMsg) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('📋', successMsg);
+        }).catch(() => {
+          fallbackCopy(text, successMsg);
+        });
+      } else {
+        fallbackCopy(text, successMsg);
+      }
+    }
+
+    function fallbackCopy(text, successMsg) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('📋', successMsg);
+      } catch (e) {
+        showToast('💡', 'Select and copy the commands above.');
+      }
+      document.body.removeChild(ta);
+    }
+
+    function copyGitCommands() {
+      const code = document.getElementById('gitCommandsBlock').textContent;
+      copyTextSafe(code, 'Copied Git commands to clipboard!');
+    }
+
+    function downloadStandaloneIndexHtml() {
+      const author = (document.getElementById('inputAuthorName').value || 'Nishant Rai').trim();
+      const docClone = document.documentElement.outerHTML
+        .replace(/Nishant Rai/g, author)
+        .replace(/NISHANT RAI/g, author.toUpperCase());
+      const fullHtml = '<!DOCTYPE html>\n' + docClone;
+      const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'index.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('⬇️', `Downloaded index.html customized for ${author}!`);
+    }
+
+    function downloadReadmeMd() {
+      const author = (document.getElementById('inputAuthorName').value || 'Nishant Rai').trim();
+      const user = (document.getElementById('inputGithubUser').value || 'nishantrai').trim().toLowerCase().replace(/\s+/g, '');
+      const repo = (document.getElementById('inputRepoName').value || 'how-netflix-works').trim().toLowerCase().replace(/\s+/g, '-');
+
+      const md = `# 🍿 How Netflix Works — An Interactive Comic Guide
+
+**Handmade by ${author}**  
+🌐 **Live Comic Website:** [https://${user}.github.io/${repo}/](https://${user}.github.io/${repo}/)
+
+Inspired by the visual storytelling of [howdns.works](https://howdns.works/), this interactive webcomic explains Netflix's global streaming architecture from scratch in plain, entertaining terms:
+
+## 📚 Episodes Included
+1. **Episode 1: The "Press Play" Freeze-Frame** — Why Netflix splits its brain into the **AWS Control Plane** (*The Hotel Front Desk*) and the **Open Connect Data Plane** (*The Room Mini-Fridge*).
+2. **Episode 2: The Hollywood Blender** — How a 120GB Studio Master is chopped into 2-to-4 second HLS/DASH chunks and optimized using **VMAF** AI visual scoring.
+3. **Episode 3: The 2:00 AM Night Shift** — Why Netflix ships free physical **Open Connect Appliances (OCAs)** inside local ISPs and pre-caches predicted hits overnight.
+4. **Episode 4: The 200-Millisecond Handshake** — Following the Play request from couch to AWS Zuul/Steering to your nearest local OCA server 3 miles away.
+5. **Episode 5: Smoothness Over Perfection** — Client-side **Adaptive Bitrate Streaming (ABR)** and how your TV outsmarts home Wi-Fi drops without buffering.
+6. **Episode 6: The Thumbnail Illusion & Binge Magic** — Personalized artwork via **AVA / Contextual Bandits** and next-episode prefetching.
+7. **Bonus Episode: Chaos Monkey!** — How Netflix breaks its own production servers during business hours to guarantee 24/7 resilience.
+
+## 🚀 Running Locally or Deploying on GitHub Pages
+This project is a zero-dependency, self-contained single-file web application (\`index.html\`).
+1. Push \`index.html\` to the \`main\` branch of your GitHub repository.
+2. In **Settings → Pages**, set the source branch to \`main\` / \`/(root)\`.
+`;
+      const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'README.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('⬇️', 'Downloaded README.md for your GitHub repository!');
+    }
+
+    let toastTimer = null;
+    function showToast(icon, text) {
+      const t = document.getElementById('comicToast');
+      document.getElementById('comicToastIcon').textContent = icon;
+      document.getElementById('comicToastText').textContent = text;
+      t.classList.remove('hidden');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        t.classList.add('hidden');
+      }, 3400);
+    }
+
+    // Initialize on load
+    window.onload = function() {
+      renderNavigationAndCover();
+      renderComicEpisodes();
+      renderQuiz();
+      updateGithubConfig();
+    };
+  </script>
+</body>
+</html>
