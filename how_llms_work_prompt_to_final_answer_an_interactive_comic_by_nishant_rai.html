@@ -1,0 +1,2110 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How LLMs Work (Prompt to Final Answer) — An Interactive Comic by Nishant Rai</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:ital,wght@0,400;0,700;1,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #18181b;
+      --paper: #fdfbf7;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fcf8f0;
+      color: #18181b;
+      background-image: radial-gradient(#e2dac8 1.25px, transparent 1.25px);
+      background-size: 22px 22px;
+      overflow-x: hidden;
+    }
+    .font-comic-title {
+      font-family: 'Bangers', cursive;
+      letter-spacing: 0.04em;
+    }
+    .font-comic-speech {
+      font-family: 'Comic Neue', cursive;
+      font-weight: 700;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .comic-box {
+      border: 3.5px solid #18181b;
+      box-shadow: 6px 6px 0px #18181b;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .comic-box-sm {
+      border: 2.5px solid #18181b;
+      box-shadow: 4px 4px 0px #18181b;
+    }
+    .comic-btn {
+      border: 3px solid #18181b;
+      box-shadow: 4px 4px 0px #18181b;
+      transition: all 0.12s ease;
+    }
+    .comic-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px #18181b;
+    }
+    .comic-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0px #18181b;
+    }
+    .halftone-bg {
+      background-image: radial-gradient(rgba(24, 24, 27, 0.09) 1.5px, transparent 1.5px);
+      background-size: 12px 12px;
+    }
+    .speech-bubble {
+      position: relative;
+      background: #ffffff;
+      border: 3px solid #18181b;
+      border-radius: 18px;
+      padding: 12px 15px;
+      box-shadow: 3px 3px 0px rgba(24,24,27,0.9);
+      font-family: 'Comic Neue', cursive;
+      font-weight: 700;
+      font-size: 1.02rem;
+      line-height: 1.36;
+      color: #18181b;
+    }
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -13px;
+      left: 28px;
+      border-width: 13px 10px 0;
+      border-style: solid;
+      border-color: #18181b transparent;
+      display: block;
+      width: 0;
+    }
+    .speech-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 30px;
+      border-width: 10px 8px 0;
+      border-style: solid;
+      border-color: #ffffff transparent;
+      display: block;
+      width: 0;
+      z-index: 1;
+    }
+    .speech-bubble.tail-right::after {
+      left: auto;
+      right: 28px;
+    }
+    .speech-bubble.tail-right::before {
+      left: auto;
+      right: 30px;
+    }
+    .narrator-box {
+      border: 3px solid #18181b;
+      padding: 6px 12px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      letter-spacing: 0.01em;
+      box-shadow: 3px 3px 0px #18181b;
+    }
+    .sfx-badge {
+      font-family: 'Bangers', cursive;
+      letter-spacing: 0.06em;
+      border: 2.5px solid #18181b;
+      box-shadow: 3px 3px 0px #18181b;
+      transform: rotate(-4deg);
+      display: inline-block;
+    }
+    @keyframes pulsePop {
+      0%, 100% { transform: scale(1) rotate(-3deg); }
+      50% { transform: scale(1.06) rotate(-1deg); }
+    }
+    .animate-sfx {
+      animation: pulsePop 2.4s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- STICKY TOP HEADER WITH DEPTH MODE SWITCHER -->
+  <header class="sticky top-0 z-40 bg-[#18181b] text-white border-b-4 border-[#6366f1] shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <button id="brandHomeBtn" onclick="switchMainView('comic'); selectEpisode(0);" class="flex items-center gap-2.5 text-left group">
+          <span class="bg-[#6366f1] text-white font-comic-title text-xl px-2.5 py-0.5 rounded border-2 border-white shadow-[2px_2px_0px_#fff] group-hover:scale-105 transition-transform">AI</span>
+          <div>
+            <span class="font-comic-title text-xl tracking-wider text-white">HOW LLMs WORK</span>
+            <span class="hidden md:inline-block ml-2 text-xs bg-amber-300 text-zinc-900 font-bold px-2 py-0.5 rounded border border-zinc-900">Prompt → Final Answer</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Pedagogical Depth Switcher (ELI5 -> Undergrad -> Frontier Research) -->
+      <div class="flex items-center bg-zinc-900 p-1 rounded-xl border-2 border-zinc-700 gap-1">
+        <span class="text-[11px] font-extrabold uppercase text-zinc-400 px-2 hidden sm:inline">Depth:</span>
+        <button id="depthBtnEli5" onclick="setDepthMode('eli5')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold transition bg-amber-300 text-zinc-900">
+          🎈 ELI5
+        </button>
+        <button id="depthBtnUndergrad" onclick="setDepthMode('undergrad')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold transition text-zinc-300 hover:text-white">
+          🎓 CS Lecture
+        </button>
+        <button id="depthBtnAdv" onclick="setDepthMode('adv')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold transition text-zinc-300 hover:text-white">
+          🔬 Frontier Math
+        </button>
+        <button id="depthBtnAll" onclick="setDepthMode('all')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold transition text-zinc-300 hover:text-white">
+          📚 All 3
+        </button>
+      </div>
+
+      <!-- Navigation Pills -->
+      <nav class="flex flex-wrap items-center gap-1.5 text-xs font-bold">
+        <button id="navCoverBtn" onclick="switchMainView('comic'); selectEpisode(0);" class="px-2.5 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-zinc-600">
+          🏠 Cover
+        </button>
+        <button id="navEpisodesBtn" onclick="toggleEpisodesDrawer()" class="px-2.5 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-600 flex items-center gap-1">
+          📚 Stages <span id="currentEpBadge" class="bg-[#6366f1] text-white px-1.5 py-0.2 rounded text-[11px]">Cover</span>
+        </button>
+        <button id="navReadAllBtn" onclick="enableReadAllMode()" class="px-2.5 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-emerald-300 border border-zinc-600">
+          📜 Full Scroll
+        </button>
+        <button id="navGithubBtn" onclick="switchMainView('github')" class="px-2.5 py-1.5 rounded bg-[#6366f1] hover:bg-indigo-500 text-white border-2 border-white shadow-[2px_2px_0px_#fff]">
+          🚀 GitHub Pages
+        </button>
+      </nav>
+    </div>
+
+    <!-- Collapsible All-Episodes Drawer -->
+    <div id="episodesDrawer" class="hidden bg-zinc-900 border-t-2 border-zinc-700 px-4 py-3">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs uppercase tracking-wider text-amber-300 font-bold">Jump to Any Stage (From Keystroke to Final Answer):</span>
+          <button id="closeDrawerBtn" onclick="toggleEpisodesDrawer()" class="text-xs text-zinc-400 hover:text-white">✕ Close</button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2" id="drawerEpisodeGrid"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-6 sm:py-8">
+
+    <!-- ==================== VIEW 1: COMIC & INTERACTIVE STUDY VIEW ==================== -->
+    <div id="viewComic" class="space-y-8">
+
+      <!-- HERO COVER SECTION -->
+      <section id="coverHeroSection" class="comic-box bg-gradient-to-br from-[#ffd166] via-[#fef08a] to-[#a5b4fc] rounded-2xl p-6 sm:p-9 relative overflow-hidden">
+        <div class="halftone-bg absolute inset-0 pointer-events-none"></div>
+        <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div class="lg:col-span-7 space-y-4">
+            <div class="inline-flex flex-wrap items-center gap-2 bg-zinc-900 text-amber-300 text-xs font-extrabold px-3.5 py-1.5 rounded-full border-2 border-zinc-900 shadow-[3px_3px_0px_#6366f1]">
+              <span>🧭 STANFORD & UW VISUAL PEDAGOGY</span>
+              <span>•</span>
+              <span>ELI5 TO FRONTIER MATH</span>
+            </div>
+            <h1 class="font-comic-title text-5xl sm:text-7xl text-zinc-900 leading-none drop-shadow-[3px_3px_0px_#ffffff]">
+              HOW <span class="text-[#4f46e5]">LLMs</span> ACTUALLY WORK.
+            </h1>
+            <p class="text-lg sm:text-xl font-extrabold text-zinc-900 leading-snug">
+              Follow a single prompt on its complete geometric journey—from raw keyboard letters to subword tokens, 4,096-D star maps, Self-Attention scene graphs, KV caches, and sampled words.
+            </p>
+            <p class="text-sm sm:text-base text-zinc-800 font-medium bg-white/90 p-4 rounded-xl border-2 border-zinc-900 shadow-[4px_4px_0px_#18181b]">
+              Welcome to the lab! 👋 Inspired by how <strong>Prof. Fei-Fei Li</strong> (Stanford CS231n / Human-Centered AI) teaches geometric representation spaces and how <strong>Prof. Ranjay Krishna</strong> (UW CSE / Visual Genome) teaches compositional attention and reasoning, this interactive comic lets you study every layer of a modern Transformer at <strong>three simultaneous depths</strong>: 🎈 <em>ELI5 Intuition</em>, 🎓 <em>CS Lecture</em>, and 🔬 <em>Frontier Tensor Math</em>.
+            </p>
+
+            <div class="flex flex-wrap items-center gap-3 pt-1">
+              <button id="heroStartEp1Btn" onclick="selectEpisode(1)" class="comic-btn bg-[#4f46e5] hover:bg-indigo-600 text-white font-comic-title text-2xl px-7 py-3 rounded-xl">
+                ▶ Start Stage 1: Tokenization
+              </button>
+              <button id="heroReadAllBtn" onclick="enableReadAllMode()" class="comic-btn bg-white hover:bg-amber-100 text-zinc-900 font-extrabold text-sm sm:text-base px-5 py-3 rounded-xl">
+                📜 Read All 7 Stages Continuously
+              </button>
+            </div>
+
+            <div class="pt-1 flex flex-wrap items-center gap-3 text-xs font-bold text-zinc-800">
+              <span class="bg-white/90 px-3 py-1.5 rounded-lg border-2 border-zinc-900">🎨 Handmade by <strong class="text-[#4f46e5]" id="authorHeroName">Nishant Rai</strong></span>
+              <span class="bg-white/90 px-3 py-1.5 rounded-lg border-2 border-zinc-900">🎚️ 3-Level Depth Switcher</span>
+              <span class="bg-white/90 px-3 py-1.5 rounded-lg border-2 border-zinc-900">🧪 7 Interactive Tensor Labs</span>
+            </div>
+          </div>
+
+          <!-- Comic Mentors Cast Card -->
+          <div class="lg:col-span-5">
+            <div class="comic-box bg-zinc-900 text-white rounded-2xl p-4 sm:p-5 relative">
+              <div class="sfx-badge bg-[#4f46e5] text-white text-sm px-3 py-1 rounded absolute -top-3 -right-2 z-20">
+                YOUR LAB GUIDES!
+              </div>
+              <div class="grid grid-cols-2 gap-3 text-center">
+                <!-- Guide 1: Prof. Fei-Fei -->
+                <div class="bg-[#ffd166] text-zinc-900 p-3 rounded-xl border-2 border-white">
+                  <svg viewBox="0 0 90 70" class="w-16 h-14 mx-auto">
+                    <circle cx="45" cy="28" r="16" fill="#ffcdb2" stroke="#18181b" stroke-width="3"/>
+                    <path d="M27 28 Q28 10 45 10 Q62 10 63 28" fill="#18181b"/>
+                    <rect x="33" y="22" width="10" height="7" rx="2" fill="none" stroke="#18181b" stroke-width="2.2"/>
+                    <rect x="47" y="22" width="10" height="7" rx="2" fill="none" stroke="#18181b" stroke-width="2.2"/>
+                    <line x1="43" y1="25" x2="47" y2="25" stroke="#18181b" stroke-width="2.2"/>
+                    <path d="M39 35 Q45 40 51 35" fill="none" stroke="#18181b" stroke-width="2.5"/>
+                    <rect x="23" y="45" width="44" height="20" rx="6" fill="#4f46e5" stroke="#18181b" stroke-width="2.5"/>
+                  </svg>
+                  <div class="font-comic-title text-base mt-1">PROF. FEI-FEI</div>
+                  <div class="text-[11px] font-bold text-zinc-800">Geometry of Meaning Space</div>
+                </div>
+                <!-- Guide 2: Prof. Ranjay -->
+                <div class="bg-[#a5f3fc] text-zinc-900 p-3 rounded-xl border-2 border-white">
+                  <svg viewBox="0 0 90 70" class="w-16 h-14 mx-auto">
+                    <circle cx="45" cy="28" r="16" fill="#e0a96d" stroke="#18181b" stroke-width="3"/>
+                    <path d="M29 22 Q45 8 61 22" fill="#18181b"/>
+                    <circle cx="39" cy="26" r="2.5" fill="#18181b"/>
+                    <circle cx="51" cy="26" r="2.5" fill="#18181b"/>
+                    <path d="M38 34 Q45 39 52 34" fill="none" stroke="#18181b" stroke-width="2.5"/>
+                    <rect x="23" y="45" width="44" height="20" rx="6" fill="#7c3aed" stroke="#18181b" stroke-width="2.5"/>
+                  </svg>
+                  <div class="font-comic-title text-base mt-1">PROF. RANJAY</div>
+                  <div class="text-[11px] font-bold text-zinc-800">Attention Graphs & Reasoning</div>
+                </div>
+                <!-- Guide 3: Token Bot -->
+                <div class="bg-[#86efac] text-zinc-900 p-3 rounded-xl border-2 border-white">
+                  <svg viewBox="0 0 90 70" class="w-16 h-14 mx-auto">
+                    <rect x="24" y="14" width="42" height="44" rx="8" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+                    <rect x="30" y="21" width="30" height="14" rx="3" fill="#18181b"/>
+                    <circle cx="39" cy="28" r="3" fill="#06d6a0"/>
+                    <circle cx="51" cy="28" r="3" fill="#06d6a0"/>
+                    <text x="45" y="51" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="bold" fill="#18181b">ID:4821</text>
+                  </svg>
+                  <div class="font-comic-title text-base mt-1">TOKEN BOT #4821</div>
+                  <div class="text-[11px] font-bold text-zinc-800">4,096-D Vector Traveler</div>
+                </div>
+                <!-- Guide 4: KV Cache Vault -->
+                <div class="bg-[#fda4af] text-zinc-900 p-3 rounded-xl border-2 border-white">
+                  <svg viewBox="0 0 90 70" class="w-16 h-14 mx-auto">
+                    <rect x="18" y="14" width="54" height="46" rx="6" fill="#e11d48" stroke="#18181b" stroke-width="3"/>
+                    <rect x="25" y="22" width="40" height="12" rx="2" fill="#ffd166" stroke="#18181b" stroke-width="2"/>
+                    <text x="45" y="31" text-anchor="middle" font-family="Bangers" font-size="10" fill="#18181b">K & V MEMORY</text>
+                    <circle cx="37" cy="46" r="3" fill="#ffffff"/>
+                    <circle cx="53" cy="46" r="3" fill="#ffffff"/>
+                  </svg>
+                  <div class="font-comic-title text-base mt-1">KV CACHE VAULT</div>
+                  <div class="text-[11px] font-bold text-zinc-800">Prefill & Decode Accelerator</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7-STAGE PIPELINE OVERVIEW CARDS -->
+        <div class="relative z-10 mt-8 pt-6 border-t-4 border-zinc-900">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <h2 class="font-comic-title text-2xl sm:text-3xl text-zinc-900">
+              🗺️ THE 7 STAGES FROM PROMPT TO FINAL ANSWER:
+            </h2>
+            <span class="text-xs font-extrabold uppercase bg-zinc-900 text-white px-3 py-1 rounded-full">
+              Click any stage to jump in
+            </span>
+          </div>
+          <div id="coverEpisodeCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"></div>
+        </div>
+      </section>
+
+      <!-- INTERACTIVE END-TO-END LIVE PROMPT-TO-ANSWER PIPELINE TRACER -->
+      <section class="comic-box bg-zinc-900 text-white rounded-2xl p-5 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-zinc-700 pb-3 mb-4">
+          <div>
+            <span class="bg-amber-300 text-zinc-900 font-comic-title text-base px-2.5 py-0.5 rounded">⚡ LIVE END-TO-END PROMPT TRACER</span>
+            <h3 class="font-comic-title text-2xl sm:text-3xl text-white mt-1">
+              WATCH A REAL PROMPT TRAVEL THROUGH ALL 7 STAGES
+            </h3>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <button onclick="selectLiveTracePrompt(0)" id="tracePromptBtn0" class="px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition bg-amber-300 text-zinc-900 border-white">1. "The bank by the river was"</button>
+            <button onclick="selectLiveTracePrompt(1)" id="tracePromptBtn1" class="px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition bg-zinc-800 text-white border-zinc-600">2. "Why is the sky blue?"</button>
+            <button onclick="selectLiveTracePrompt(2)" id="tracePromptBtn2" class="px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition bg-zinc-800 text-white border-zinc-600">3. "In Seattle, coffee is"</button>
+          </div>
+        </div>
+        <div id="livePipelineTracerDisplay" class="grid grid-cols-1 md:grid-cols-7 gap-2.5 text-xs"></div>
+      </section>
+
+      <!-- STAGE NAVIGATION PILL BAR & DEPTH BANNER -->
+      <div class="comic-box bg-white rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-1.5" id="episodePillBar"></div>
+        <div class="flex items-center gap-2 text-xs font-bold">
+          <span id="activeDepthBadge" class="bg-amber-100 text-zinc-900 px-3 py-1 rounded-lg border-2 border-zinc-900">
+            Active Lens: 🎈 ELI5 Intuition
+          </span>
+        </div>
+      </div>
+
+      <!-- DYNAMIC COMIC EPISODES CONTAINER -->
+      <div id="comicEpisodesContainer" class="space-y-12"></div>
+
+      <!-- BOTTOM EPISODE PAGER -->
+      <div id="episodeBottomPager" class="comic-box bg-zinc-900 text-white rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <button id="prevEpBtn" onclick="stepEpisode(-1)" class="comic-btn bg-zinc-800 hover:bg-zinc-700 text-white font-comic-title text-xl px-5 py-2.5 rounded-xl border-2 border-white">
+          ← Previous Stage
+        </button>
+        <div class="text-center">
+          <div id="pagerEpTitle" class="font-comic-title text-2xl text-amber-300">Stage 1</div>
+          <div id="pagerEpTeaser" class="text-xs sm:text-sm text-zinc-300 mt-0.5">Follow the vector down the Residual Stream!</div>
+        </div>
+        <button id="nextEpBtn" onclick="stepEpisode(1)" class="comic-btn bg-[#6366f1] hover:bg-indigo-500 text-white font-comic-title text-2xl px-6 py-2.5 rounded-xl border-2 border-white">
+          Next Stage →
+        </button>
+      </div>
+
+      <!-- MASTER ARCHITECTURE CHEAT SHEET & QUIZ -->
+      <section id="architectureReferenceSection" class="comic-box bg-white rounded-2xl p-6 sm:p-8 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b-4 border-zinc-900 pb-4">
+          <div>
+            <span class="text-xs font-extrabold uppercase tracking-wider bg-[#4f46e5] text-white px-2.5 py-1 rounded">ELI5 → CS231n → Frontier Math</span>
+            <h2 class="font-comic-title text-3xl sm:text-4xl text-zinc-900 mt-1">
+              THE COMPLETE LLM INFERENCE CHEAT SHEET
+            </h2>
+          </div>
+          <button id="openQuizBtn" onclick="scrollToQuiz()" class="comic-btn bg-[#ffd166] hover:bg-amber-300 text-zinc-900 font-extrabold text-sm px-4 py-2 rounded-xl">
+            🏆 Take the 5-Question Mastery Quiz
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse border-2 border-zinc-900 text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-zinc-900 text-white">
+                <th class="p-3 border-2 border-zinc-900 font-comic-title text-base tracking-wide">Pipeline Stage</th>
+                <th class="p-3 border-2 border-zinc-900 font-comic-title text-base tracking-wide">🎈 ELI5 Metaphor</th>
+                <th class="p-3 border-2 border-zinc-900 font-comic-title text-base tracking-wide">🎓 Undergrad CS Concept</th>
+                <th class="p-3 border-2 border-zinc-900 font-comic-title text-base tracking-wide">🔬 Tensor Shape & Formula</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y-2 divide-zinc-900 font-medium">
+              <tr class="bg-amber-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">1. Tokenization (BPE)</td>
+                <td class="p-3 border-2 border-zinc-900">Snapping Lego syllables together and stamping an ID number on each brick</td>
+                <td class="p-3 border-2 border-zinc-900">Byte-Pair Encoding maps raw UTF-8 strings into discrete vocabulary indices</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">String → t ∈ ℤ^[B, S], |V| ≈ 128,256</td>
+              </tr>
+              <tr class="bg-sky-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">2. Embeddings + RoPE</td>
+                <td class="p-3 border-2 border-zinc-900">Placing each word on a 4,096-D star map and twisting a clock hand for word order</td>
+                <td class="p-3 border-2 border-zinc-900">Lookup table W_E plus Rotary Positional Embeddings in Query/Key subspaces</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">X_0 = W_E[t] ∈ ℝ^[B, S, d_model], R_Θ(m)</td>
+              </tr>
+              <tr class="bg-purple-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">3. Self-Attention</td>
+                <td class="p-3 border-2 border-zinc-900">Words at a cocktail party shining flashlights on earlier words to gather context</td>
+                <td class="p-3 border-2 border-zinc-900">Scaled Dot-Product Attention with Causal Masking & Grouped-Query Attention (GQA)</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">softmax((QK^T + M) / √d_k) V</td>
+              </tr>
+              <tr class="bg-emerald-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">4. MLP & Residual Stream</td>
+                <td class="p-3 border-2 border-zinc-900">A shared conveyor belt visiting a giant library of factual reflex neurons</td>
+                <td class="p-3 border-2 border-zinc-900">Pre-RMSNorm residual connections + SwiGLU Feed-Forward Key-Value memories</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">x + W_down(SiLU(W_gate x) ⊙ W_up x)</td>
+              </tr>
+              <tr class="bg-rose-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">5. Prefill & KV Cache</td>
+                <td class="p-3 border-2 border-zinc-900">Writing notes on a sticky pad while reading the prompt so you never re-read old pages</td>
+                <td class="p-3 border-2 border-zinc-900">Compute-bound parallel Prefill (TTFT) vs. Memory-bound sequential Decode (ITL)</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">Cache: 2 × L × n_kv × d_h × S × bytes</td>
+              </tr>
+              <tr class="bg-indigo-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">6. Logits & Sampling</td>
+                <td class="p-3 border-2 border-zinc-900">Scoring every word in the dictionary, turning a creativity knob, and rolling loaded dice</td>
+                <td class="p-3 border-2 border-zinc-900">Unembedding projection W_U, Temperature scaling, Softmax, Top-k & Nucleus (Top-p)</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">P(w_i) = exp(z_i / T) / Σ_j exp(z_j / T)</td>
+              </tr>
+              <tr class="bg-orange-50/70">
+                <td class="p-3 border-2 border-zinc-900 font-bold">7. Loop, CoT & RLHF</td>
+                <td class="p-3 border-2 border-zinc-900">Feeding each spoken word back into your ear & writing scratchpad math steps out loud</td>
+                <td class="p-3 border-2 border-zinc-900">Autoregressive loop until EOS token, Chain-of-Thought compute scaling, SFT + DPO/RLHF</td>
+                <td class="p-3 border-2 border-zinc-900 font-mono-code text-xs">P(Y|X) = Π_t P(y_t | X, y_&lt;t)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Interactive 5-Question Mastery Quiz -->
+        <div id="comicQuizBox" class="comic-box-sm bg-[#f5f3ff] rounded-xl p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="font-comic-title text-2xl text-zinc-900">🎓 STANFORD / UW CHECKPOINT QUIZ: TEST YOUR INTUITION!</h3>
+              <p class="text-xs font-bold text-zinc-600">See if you can answer these 5 foundational questions from ELI5 to systems engineering:</p>
+            </div>
+            <div class="bg-zinc-900 text-amber-300 font-mono-code text-xs px-3 py-1.5 rounded-lg">
+              Score: <span id="quizScoreDisplay">0 / 5</span>
+            </div>
+          </div>
+          <div id="quizQuestionsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+
+        <!-- Grounded Academic & Engineering References -->
+        <div class="bg-zinc-100 rounded-xl p-4 border-2 border-zinc-900 text-xs space-y-2">
+          <div class="font-extrabold text-zinc-900 uppercase tracking-wider">📚 Lectures, Papers & Engineering Sources:</div>
+          <div class="flex flex-wrap gap-3">
+            <a href="https://handbook.modular.com/llm-inference-basics/how-does-llm-inference-work/" target="_blank" rel="noopener noreferrer" class="underline font-bold text-indigo-700 hover:text-red-600">Modular LLM Inference Handbook (Tokens, Prefill, Decode, KV Cache) ↗</a>
+            <span>•</span>
+            <a href="https://courses.cs.washington.edu/courses/cse493g1/24wi/schedule/lectures/lecture1.pdf" target="_blank" rel="noopener noreferrer" class="underline font-bold text-indigo-700 hover:text-red-600">Prof. Ranjay Krishna — UW CSE 493G1 Deep Learning Lectures ↗</a>
+            <span>•</span>
+            <a href="https://www.alphaxiv.org/researchers" target="_blank" rel="noopener noreferrer" class="underline font-bold text-indigo-700 hover:text-red-600">Prof. Fei-Fei Li — Visual Representation & Foundation Models Research ↗</a>
+            <span>•</span>
+            <a href="https://medium.com/@tejpal.abhyuday/how-llms-actually-generate-text-the-full-inference-pipeline-explained-question-by-question-9b04e3f839de" target="_blank" rel="noopener noreferrer" class="underline font-bold text-indigo-700 hover:text-red-600">How LLMs Actually Generate Text: Full Inference Pipeline ↗</a>
+            <span>•</span>
+            <a href="https://howdns.works/" target="_blank" rel="noopener noreferrer" class="underline font-bold text-indigo-700 hover:text-red-600">How DNS Works (Comic Format Inspiration) ↗</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================== VIEW 2: GITHUB PAGES DEPLOYMENT STUDIO ==================== -->
+    <div id="viewGithub" class="hidden space-y-6">
+      <section class="comic-box bg-white rounded-2xl p-6 sm:p-8 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b-4 border-zinc-900 pb-4">
+          <div>
+            <span class="bg-[#4f46e5] text-white text-xs font-extrabold px-3 py-1 rounded uppercase">Multi-Comic GitHub Pages Kit</span>
+            <h2 class="font-comic-title text-4xl text-zinc-900 mt-1">
+              🚀 ADD THIS TO YOUR `iamnishantrai.github.io` REPOSITORY
+            </h2>
+            <p class="text-sm text-zinc-700 font-medium">
+              Pre-configured for <strong class="text-zinc-900">Nishant Rai (`iamnishantrai`)</strong>! Drop the downloaded <code class="font-mono-code bg-zinc-100 px-1.5 py-0.5 rounded">index.html</code> into a folder named <code class="font-mono-code bg-zinc-100 px-1.5 py-0.5 rounded">how-llms-work/</code> or <code class="font-mono-code bg-zinc-100 px-1.5 py-0.5 rounded">how-ai-works/</code> inside your single <code class="font-mono-code bg-zinc-100 px-1.5 py-0.5 rounded">iamnishantrai.github.io</code> repo!
+            </p>
+          </div>
+          <button id="backToComicBtn" onclick="switchMainView('comic')" class="comic-btn bg-[#ffd166] hover:bg-amber-300 text-zinc-900 font-comic-title text-xl px-5 py-2.5 rounded-xl">
+            ← Back to LLM Comic
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-indigo-50 p-4 rounded-xl border-2 border-zinc-900">
+          <div>
+            <label for="inputAuthorName" class="block text-xs font-extrabold uppercase text-zinc-800 mb-1">Your Display Name</label>
+            <input id="inputAuthorName" type="text" value="Nishant Rai" oninput="updateGithubConfig()" class="w-full px-3 py-2 rounded-lg border-2 border-zinc-900 font-bold text-sm bg-white" />
+          </div>
+          <div>
+            <label for="inputGithubUser" class="block text-xs font-extrabold uppercase text-zinc-800 mb-1">Your GitHub Username</label>
+            <input id="inputGithubUser" type="text" value="iamnishantrai" oninput="updateGithubConfig()" class="w-full px-3 py-2 rounded-lg border-2 border-zinc-900 font-mono-code text-sm bg-white" />
+          </div>
+          <div>
+            <label for="inputRepoName" class="block text-xs font-extrabold uppercase text-zinc-800 mb-1">Subfolder / Repo Slug</label>
+            <input id="inputRepoName" type="text" value="how-llms-work" oninput="updateGithubConfig()" class="w-full px-3 py-2 rounded-lg border-2 border-zinc-900 font-mono-code text-sm bg-white" />
+          </div>
+        </div>
+
+        <div class="bg-zinc-900 text-white p-4 rounded-xl border-2 border-zinc-900 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div class="text-xs text-amber-300 font-bold uppercase">Your Live URL Will Be:</div>
+            <div id="livePagesUrlPreview" class="font-mono-code text-base sm:text-lg text-emerald-400 font-bold break-all">
+              https://iamnishantrai.github.io/how-llms-work/
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="downloadIndexBtn" onclick="downloadStandaloneIndexHtml()" class="comic-btn bg-[#06d6a0] hover:bg-emerald-400 text-zinc-900 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl border-2 border-white">
+              ⬇️ Download Ready `index.html`
+            </button>
+            <button id="downloadReadmeBtn" onclick="downloadReadmeMd()" class="comic-btn bg-[#4cc9f0] hover:bg-sky-300 text-zinc-900 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl border-2 border-white">
+              ⬇️ Download `README.md`
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="comic-box-sm bg-emerald-50 rounded-xl p-5 space-y-3">
+            <div class="inline-block bg-zinc-900 text-emerald-300 text-xs font-extrabold px-2.5 py-1 rounded">
+              SINGLE REPO MULTI-COMIC SETUP
+            </div>
+            <h3 class="font-comic-title text-2xl text-zinc-900">Hosting Alongside `how-netflix-works`</h3>
+            <ol class="list-decimal list-inside space-y-2 text-sm font-medium text-zinc-800">
+              <li>Click <strong>"⬇️ Download Ready `index.html`"</strong> above.</li>
+              <li>In your master <code class="font-mono-code bg-white px-1.5 py-0.5 rounded border border-zinc-400">iamnishantrai.github.io</code> repository, create a folder named <code id="stepRepoName1" class="font-mono-code bg-white px-1.5 py-0.5 rounded border border-zinc-400">how-llms-work</code> (or <code class="font-mono-code bg-white px-1.5 py-0.5 rounded border border-zinc-400">how-ai-works</code>) and place <code class="font-mono-code bg-white px-1.5 py-0.5 rounded border border-zinc-400">index.html</code> inside it.</li>
+              <li>Or, if you prefer separate repositories per comic, create a public repo named <code class="font-mono-code bg-white px-1.5 py-0.5 rounded border border-zinc-400">how-llms-work</code>, upload <code class="font-mono-code bg-white px-1.5 py-0.5 rounded border border-zinc-400">index.html</code> to the root, and enable <strong>Settings → Pages</strong>!</li>
+            </ol>
+          </div>
+
+          <div class="comic-box-sm bg-zinc-900 text-white rounded-xl p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="bg-[#4f46e5] text-white text-xs font-extrabold px-2.5 py-1 rounded">
+                GIT CLI COMMANDS
+              </span>
+              <button id="copyGitCmdsBtn" onclick="copyGitCommands()" class="text-xs bg-amber-300 hover:bg-amber-200 text-zinc-900 font-extrabold px-3 py-1 rounded border border-zinc-900">
+                📋 Copy Commands
+              </button>
+            </div>
+            <h3 class="font-comic-title text-2xl text-amber-300">Terminal Commands</h3>
+            <pre id="gitCommandsBlock" class="font-mono-code text-xs bg-zinc-950 text-emerald-300 p-4 rounded-lg overflow-x-auto border border-zinc-700 leading-relaxed"># Inside your iamnishantrai.github.io repo:
+mkdir -p how-llms-work
+mv ~/Downloads/index.html how-llms-work/index.html
+git add how-llms-work/index.html
+git commit -m "Add How LLMs Work interactive comic by Nishant Rai"
+git push origin main</pre>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-[#18181b] text-white border-t-4 border-zinc-900 mt-12 py-8 px-4">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <div class="bg-[#6366f1] text-white font-comic-title text-2xl px-3 py-1 rounded border-2 border-white">AI</div>
+        <div>
+          <div class="font-comic-title text-xl tracking-wide text-amber-300">
+            HANDMADE BY <span id="footerAuthorName">NISHANT RAI</span>
+          </div>
+          <div class="text-xs text-zinc-400">
+            Part of the <a href="https://iamnishantrai.github.io/how-netflix-works/" target="_blank" rel="noopener noreferrer" class="underline text-amber-200 hover:text-white">How Things Work Comic Series</a> • Inspired by Stanford CS231n, UW CSE 493G1 & <a href="https://howdns.works/" target="_blank" rel="noopener noreferrer" class="underline text-amber-200 hover:text-white">howdns.works</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
+        <button id="footerCoverBtn" onclick="switchMainView('comic'); selectEpisode(0);" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-600">
+          Cover
+        </button>
+        <button id="footerReadAllBtn" onclick="enableReadAllMode()" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-emerald-300 border border-zinc-600">
+          All 7 Stages
+        </button>
+        <button id="footerHostBtn" onclick="switchMainView('github')" class="px-3 py-1.5 rounded bg-[#6366f1] hover:bg-indigo-500 text-white border border-white">
+          🚀 Deploy on GitHub Pages
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- IN-PAGE TOAST NOTIFICATION -->
+  <div id="comicToast" class="fixed bottom-5 right-5 z-50 hidden comic-box bg-zinc-900 text-white px-4 py-3 rounded-xl flex items-center gap-3 max-w-sm">
+    <span class="text-xl" id="comicToastIcon">🧠</span>
+    <span class="text-xs sm:text-sm font-bold" id="comicToastText">Ready!</span>
+  </div>
+
+  <script>
+    // =========================================================================
+    // STATE & PEDAGOGICAL DEPTH ENGINE
+    // =========================================================================
+    let currentView = 'comic';
+    let currentEpisode = 0; // 0 = Cover + Ep 1 preview, 1..7 = specific stage
+    let readAllMode = false;
+    let depthMode = 'eli5'; // 'eli5' | 'undergrad' | 'adv' | 'all'
+    let activeTracePromptIdx = 0;
+
+    // Interactive Mini-Lab states across the 7 Episodes
+    let ep1TokenSample = 'unbelievable';
+    let ep2RoPEPos = 3;
+    let ep3ContextMode = 'river'; // 'river' | 'loan'
+    let ep4LayerProbe = 80; // 1 | 24 | 52 | 80
+    let ep5KvCacheEnabled = true;
+    let ep5SeqLen = 4096;
+    let ep6Temp = 0.7;
+    let ep6TopP = 0.9;
+    let ep6PickedWord = '';
+    let ep7StepCount = 3;
+    let ep7UseCoT = true;
+    let quizAnswers = {};
+
+    const TRACE_PROMPTS = [
+      {
+        prompt: "The bank by the river was",
+        s1_tokens: '["The", " bank", " by", " the", " river", " was"] → [791, 6201, 555, 279, 7500, 574]',
+        s2_embed: '6 × 4,096-D vectors + RoPE angles (θ_1..θ_6)',
+        s3_attn: '" bank" attends 68% to " river" → shifts vector toward muddy shore',
+        s4_mlp: 'SwiGLU neurons activate geography/water features (steep, muddy, flooded)',
+        s5_kv: 'Prefill caches 6 K/V pairs per layer (TTFT: 38ms); Decode reads cache',
+        s6_logits: 'Top logits: "muddy" (41%), "steep" (29%), "flooded" (18%)',
+        s7_output: 'Sampled token: "muddy" (ID: 49218) → appended to loop!'
+      },
+      {
+        prompt: "Why is the sky blue?",
+        s1_tokens: '["Why", " is", " the", " sky", " blue", "?"] → [10445, 374, 279, 13180, 6437, 30]',
+        s2_embed: '" sky" & " blue" map near atmosphere/optics cluster in ℝ^4096',
+        s3_attn: '"?" attends strongly to ("Why", "sky", "blue") to frame a causal query',
+        s4_mlp: 'Layer 42–68 MLP key-value memories retrieve "Rayleigh scattering"',
+        s5_kv: '6 prompt tokens prefilled in parallel; KV cache stores 192 KB',
+        s6_logits: 'Top logits: "Sunlight" (46%), "Because" (34%), "Blue" (12%)',
+        s7_output: 'Streams: "Sunlight reaches Earth\'s atmosphere and scatters..."'
+      },
+      {
+        prompt: "In Seattle, coffee is",
+        s1_tokens: '["In", " Seattle", ",", " coffee", " is"] → [644, 15382, 11, 11523, 374]',
+        s2_embed: '" Seattle" + " coffee" vectors land in Pacific Northwest + espresso subspace',
+        s3_attn: '" is" attends to both " Seattle" (44%) and " coffee" (41%)',
+        s4_mlp: 'Cultural & regional associations amplified across residual highway',
+        s5_kv: '5 tokens prefilled; single-token decode runs at 14ms/token (ITL)',
+        s6_logits: 'At T=0.7: "a" (38%), "practically" (27%), "more" (19%)',
+        s7_output: 'Streams: "practically a way of life (and liquid sunshine)!"'
+      }
+    ];
+
+    const EPISODES = [
+      {
+        id: 1,
+        badge: "Stage 1",
+        title: "The BPE Word-Chopper (Tokenization)",
+        subtitle: "How Raw Keyboard Text Gets Sliced Into Subword Lego Bricks & Integer IDs",
+        color: "#ffd166",
+        teaser: "Why LLMs never see letters or words—only integer Token IDs!",
+        eli5: "Imagine a neural network is a giant calculator that only eats numbers—it cannot read letters! Instead of chopping text into single letters (too slow!) or memorizing every rare word on Earth (too big!), a robot called the BPE Tokenizer snaps common syllables together like Lego bricks. Words you use every day (' apple') stay one brick, while big fancy words ('unbelievable') get snapped into 3 reusable bricks: ['un', 'believ', 'able']!",
+        undergrad: "Modern LLMs use Byte-Pair Encoding (BPE) over UTF-8 bytes with a vocabulary |V| between 100,000 and 256,000 tokens (e.g., 128,256 in Llama 3; 200,000 in GPT-4o/o1). Training a BPE tokenizer starts with 256 raw byte tokens and iteratively merges the most frequent adjacent pair in the corpus. Leading spaces are preserved as part of the token (e.g. 'Ġbank'), which makes tokenization reversible and lossless.",
+        adv: "Formally, given a byte sequence B = (b_1, ..., b_L), a greedy or regex-pretokenized BPE merge table M : V × V → V maps B to a sequence of integer IDs t = (t_1, ..., t_S) ∈ {0, ..., |V|-1}^S where S < L (compression ratio ~3.8–4.2 bytes/token in English). Because subword boundaries obscure character indices inside a single token ID, character-level tasks (like counting 'r's in 'strawberry' → ['str', 'aw', 'berry']) require learned sub-token feature unpacking inside early MLP layers.",
+        panels: [
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffd166]",
+            captionTop: "Millisecond 0: You type a prompt and press Enter...",
+            sfx: "TYPE! TYPE! ⌨️",
+            sfxColor: "bg-[#4f46e5] text-white",
+            svgType: "prompt_keystroke",
+            bubbles: [
+              { speaker: "Nishant", text: "Okay LLM! Here is my prompt: 'The bank by the river was'...Wait, how does a GPU do math on English words?!", pos: "left" },
+              { speaker: "Prof. Fei-Fei", text: "Great first question! A GPU only understands matrices of numbers. Before a single neuron fires, your words must enter the Tokenizer!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Computers can't multiply the word 'cat' by 5! So step one is turning pieces of words into ID numbers.",
+            noteUndergrad: "🎓 CS Lecture: The tokenizer is a deterministic lookup & merge state machine that runs on the CPU in <2 milliseconds before the GPU is even called.",
+            noteAdv: "🔬 Frontier Math: Regex pre-tokenization (e.g., tiktoken cl100k / o200k_base) splits contractions and punctuation first so merges never cross word-category boundaries."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#a5f3fc]",
+            captionTop: "Why not just number every single letter (A=1, B=2)?",
+            sfx: "GOLDILOCKS SPLIT! 🧩",
+            sfxColor: "bg-zinc-900 text-amber-300",
+            svgType: "bpe_lego",
+            bubbles: [
+              { speaker: "Prof. Ranjay", text: "If every letter were a token, a short page would be 3,000 tokens long—and individual letters like 't' carry zero meaning by themselves!", pos: "left" },
+              { speaker: "BPE Chopper", text: "So I use Byte-Pair Encoding! Common words stay whole (' river' = #7500), while rare words split into root pieces ('un'+'believ'+'able')!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Subwords are like Lego syllables—you can build 'unbelievable', 'believing', and 'believer' from the same shared pieces!",
+            noteUndergrad: "🎓 CS Lecture: Subword tokenization solves the Out-of-Vocabulary (OOV) problem while keeping sequence length S compact (roughly 0.75 words per token).",
+            noteAdv: "🔬 Frontier Math: Because Self-Attention scales quadratically O(S²) during prefill, 4× fewer tokens from BPE yields up to 16× reduction in attention FLOPs."
+          },
+          {
+            span: "lg:col-span-12",
+            bg: "bg-[#86efac]",
+            captionTop: "The 'Strawberry' Mystery & Why Leading Spaces Matter!",
+            sfx: "AHA MOMENT! 🍓",
+            sfxColor: "bg-[#e11d48] text-white",
+            svgType: "strawberry_tokens",
+            bubbles: [
+              { speaker: "Nishant", text: "Wait—is THAT why early LLMs struggled to count how many 'r's are in 'strawberry'?!", pos: "left" },
+              { speaker: "Prof. Fei-Fei", text: "Exactly! The LLM never sees the letters s-t-r-a-w-b-e-r-r-y! It just sees three integer ID badges: [496, 675, 15717]!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Imagine trying to spell a word when someone hands you three sealed boxes labeled #496, #675, and #15717!",
+            noteUndergrad: "🎓 CS Lecture: Also notice that spaces are attached to the front of words (' bank' ≠ 'bank') so detokenizing back to text doesn't lose whitespace.",
+            noteAdv: "🔬 Frontier Math: Output of Stage 1 is a 1D integer tensor t = [791, 6201, 555, 279, 7500, 574] ∈ ℤ^S. Next: turning arbitrary IDs into geometric vectors!"
+          }
+        ]
+      },
+      {
+        id: 2,
+        badge: "Stage 2",
+        title: "The 4,096-D Star Map (Embeddings & RoPE)",
+        subtitle: "How Arbitrary Token IDs Become Geometric Meaning Coordinates + Rotary Clocks",
+        color: "#4cc9f0",
+        teaser: "Prof. Fei-Fei's favorite place: High-Dimensional Representation Space!",
+        eli5: "Token #6201 (' bank') and Token #6202 have consecutive ID numbers, but their meanings have nothing to do with each other! So the LLM looks up each token ID in a giant Address Book of Meaning (the Embedding Table). Every word gets 4,096 coordinates that place it on a giant Star Map where similar ideas ('dog', 'puppy', 'bark') live in the same neighborhood! Then, to remember word order, we twist each word's vector like the hands of a clock using RoPE!",
+        undergrad: "An Embedding Matrix W_E ∈ ℝ^(|V| × d_model) maps each discrete token ID t_i to a continuous vector x_i ∈ ℝ^(d_model) (where d_model = 4,096 in 8B models, up to 16,384 in frontier models). Because Self-Attention is permutation-equivariant (it treats input as an unordered bag of vectors), we inject position using Rotary Positional Embeddings (RoPE), rotating pairs of dimensions by angle m·θ_j at token index m.",
+        adv: "For token at position m, RoPE applies a block-diagonal orthogonal rotation matrix R_Θ,m ∈ ℝ^(d_k × d_k) to queries and keys: q_m' = R_Θ,m q_m and k_n' = R_Θ,n k_n, where θ_j = 10000^(-2(j-1)/d_k) (or scaled base 500,000 for 128K context). Crucially, the inner product <R_Θ,m q_m, R_Θ,n k_n> = q_m^T R_Θ,(n-m) k_n depends strictly on relative distance (n - m), preserving translation invariance across context windows.",
+        panels: [
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#a5f3fc]",
+            captionTop: "Welcome to High-Dimensional Representation Space!",
+            sfx: "4,096 DIMENSIONS! 🌌",
+            sfxColor: "bg-[#4f46e5] text-white",
+            svgType: "star_map_embeddings",
+            bubbles: [
+              { speaker: "Prof. Fei-Fei", text: "Think of an Embedding as a 4,096-number GPS coordinate in a universe of concepts! Words that mean similar things cluster together in space!", pos: "left" },
+              { speaker: "Token Bot", text: "Look! 'Seattle', 'Rain', and 'Espresso' are neighbors over here, while 'King - Man + Woman' points straight to 'Queen'!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Instead of 3 directions (left/right, up/down, forward/back), the LLM has 4,096 directions—like 'how furry is it?', 'is it a verb?', 'is it royal?'!",
+            noteUndergrad: "🎓 CS Lecture: Cosine similarity cos(θ) = (u·v)/(||u|| ||v||) measures semantic alignment between two embedding vectors in ℝ^(d_model).",
+            noteAdv: "🔬 Frontier Math: Lookup X_0 = W_E[t] produces a tensor of shape [Batch, Seq_Len, d_model]. Note that raw embeddings are static—'bank' sits halfway between rivers and money!"
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffd166]",
+            captionTop: "Wait: 'Dog bites man' vs. 'Man bites dog' have the EXACT same words!",
+            sfx: "ROTATE THE CLOCK! 🕰️",
+            sfxColor: "bg-zinc-900 text-amber-300",
+            svgType: "rope_clock",
+            bubbles: [
+              { speaker: "Prof. Ranjay", text: "Because GPUs process all prompt words at the exact same time, the model wouldn't know which word came first without Positional Encoding!", pos: "left" },
+              { speaker: "RoPE Clock", text: "I rotate Word #1 by 1 tick, Word #2 by 2 ticks, and Word #3 by 3 ticks! When two words compare their clocks, the angle between them reveals how far apart they sit!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Every word wears a wristwatch rotated by its seat number in the sentence, so any two words immediately know how many seats apart they are!",
+            noteUndergrad: "🎓 CS Lecture: Modern LLMs replaced classic sinusoidal addition (Vaswani et al., 2017) with RoPE (Su et al., 2021) applied inside every attention layer.",
+            noteAdv: "🔬 Frontier Math: High-frequency dimension pairs rotate fast (capturing local syntax) while low-frequency pairs rotate slowly (capturing long-range paragraph structure)."
+          }
+        ]
+      },
+      {
+        id: 3,
+        badge: "Stage 3",
+        title: "The Cocktail Party Spotlight (Self-Attention)",
+        subtitle: "How Words Talk to Earlier Words Using Queries (Q), Keys (K), Values (V) & Causal Masks",
+        color: "#c084fc",
+        teaser: "Prof. Ranjay shows how 'bank' figures out whether it's muddy or full of cash!",
+        eli5: "Right now, the word 'bank' is confused—does it mean a muddy river bank or a piggy bank? Imagine all the words are at a cocktail party. 'Bank' holds up a flashlight called a Query ('Hey! Are there any water or money words nearby?'). Earlier words hold up reflective signs called Keys ('I am RIVER—water feature!'). When the Query matches the Key, 'river' beams its Value information into 'bank', transforming 'bank' into 'muddy river shore'!",
+        undergrad: "Each Transformer layer projects token states X into Queries Q = X W_Q, Keys K = X W_K, and Values V = X W_V. We compute pairwise relevance scores via scaled dot-product Q K^T / √d_k, apply a Causal Mask M (setting future positions j > i to -∞ so tokens cannot peek ahead), normalize with Softmax into probability weights summing to 1, and take the weighted sum of Values V.",
+        adv: "Multi-Head / Grouped-Query Attention (GQA) runs H_q query heads (e.g., 32 heads of dim d_k = 128) sharing H_kv key-value heads (e.g., 8 KV heads) in parallel: Attention(Q,K,V) = softmax((Q K^T)/√d_k + M) V. Each head learns a specialized relational circuit—induction heads copy patterns, syntactic heads link pronouns to nouns, and semantic heads disambiguate polysemy.",
+        panels: [
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#e9d5ff]",
+            captionTop: "The 3 Hats Every Word Wears: Q, K, and V",
+            sfx: "Q • K • V 🔦",
+            sfxColor: "bg-[#4f46e5] text-white",
+            svgType: "qkv_hats",
+            bubbles: [
+              { speaker: "Prof. Ranjay", text: "Every token multiplies its vector by 3 learned matrices to create three vectors:", pos: "left" },
+              { speaker: "Token Bot", text: "1. QUERY (What I'm looking for)\n2. KEY (What label I advertise)\n3. VALUE (What meaning I give you!)", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: It's just like searching YouTube: your search bar is the Query (Q), the video titles are the Keys (K), and the actual video that plays is the Value (V)!",
+            noteUndergrad: "🎓 CS Lecture: Dividing by √d_k (e.g. √128 ≈ 11.3) prevents large dot products from pushing Softmax into flat regions with vanishing gradients.",
+            noteAdv: "🔬 Frontier Math: In GQA (Ainslie et al., 2023), 4 Query heads share 1 Key/Value head, slashing KV cache memory bandwidth by 4× with negligible perplexity loss."
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#ffd166]",
+            captionTop: "No Peeking Into the Future! (The Causal Mask)",
+            sfx: "MASKED: -∞ 🚫",
+            sfxColor: "bg-[#e11d48] text-white",
+            svgType: "causal_mask",
+            bubbles: [
+              { speaker: "Causal Referee", text: "Hold it! Word #2 ('bank') is only allowed to look at Word #1 and Word #2! Looking at future words is cheating!", pos: "left" },
+              { speaker: "Prof. Fei-Fei", text: "We stamp negative infinity (-∞) on the upper triangle of the score grid so Softmax turns future weights into exact 0.00!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Because an LLM writes stories from left to right, each word can only read the words that came BEFORE it!",
+            noteUndergrad: "🎓 CS Lecture: Decoder-only models (GPT, Claude, Llama, Gemini) use a lower-triangular causal attention mask during parallel prefill and training.",
+            noteAdv: "🔬 Frontier Math: FlashAttention (Dao et al.) fuses QK^T, causal masking, online softmax, and ×V inside fast GPU SRAM tiles without ever materializing the O(S²) matrix in HBM!"
+          },
+          {
+            span: "lg:col-span-4",
+            bg: "bg-[#86efac]",
+            captionTop: "Polysemy Solved! 'Bank' Absorbs 'River'!",
+            sfx: "CONTEXT MERGED! ✨",
+            sfxColor: "bg-zinc-900 text-amber-300",
+            svgType: "polysemy_shift",
+            bubbles: [
+              { speaker: "Token 'was'", text: "My Query matched both 'bank' and 'river'! Now 'bank' has rotated in 4,096-D space toward 'muddy shoreline'!", pos: "left" },
+              { speaker: "Prof. Ranjay", text: "And with 32 Attention Heads running at once, one head tracks grammar while another tracks geography!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: After chatting at the party, the word 'bank' isn't just a generic word anymore—it's now carrying a backpack full of river water!",
+            noteUndergrad: "🎓 CS Lecture: The outputs of all attention heads are concatenated and projected via W_O back into the Residual Stream.",
+            noteAdv: "🔬 Frontier Math: Attention moves information BETWEEN token positions (mixing across S); next, the MLP transforms information WITHIN each token position (mixing across d_model)."
+          }
+        ]
+      },
+      {
+        id: 4,
+        badge: "Stage 4",
+        title: "The Encyclopedia Vault (MLP & Residual Stream)",
+        subtitle: "How Feed-Forward Neurons Store World Knowledge Along the Residual Highway",
+        color: "#06d6a0",
+        teaser: "If Attention is how tokens talk to each other, the MLP is where tokens think & remember facts!",
+        eli5: "Imagine each token riding on a moving conveyor belt called the Residual Stream. First, it stops at the Attention station to gather clues from neighbor words ('France' + 'capital'). Then it enters the MLP Brain Vault—a room with 14,000+ tiny detector switches (neurons). When the 'France + capital' switch lights up, it squirts the vector for 'Paris' right onto the conveyor belt! And because a modern LLM stacks 32 to 120 of these layers in a tower, the vector gets smarter on every floor!",
+        undergrad: "Each Transformer block consists of two sub-layers wrapped in Pre-RMSNorm residual connections: h = x + Attention(RMSNorm(x)), followed by out = h + MLP(RMSNorm(h)). While Attention mixes information across sequence positions, the MLP (Feed-Forward Network) applies a non-linear transformation independently to each token vector, expanding d_model (e.g. 4,096) up to an intermediate dimension d_ff (e.g. 14,336) and projecting back down.",
+        adv: "As shown by Geva et al. ('Transformer Feed-Forward Layers Are Key-Value Memories'), the up-projection matrix W_up / W_gate acts as learned pattern keys over the residual stream, while the non-linearity (SwiGLU: Swish(x W_gate) ⊙ (x W_up)) gates which columns of W_down ('value vectors') are added into the residual stream. Two-thirds of all parameters in an LLM reside inside these MLP weight matrices!",
+        panels: [
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffd166]",
+            captionTop: "The Residual Stream: The Express Conveyor Belt!",
+            sfx: "x = x + f(x) 🛣️",
+            sfxColor: "bg-zinc-900 text-emerald-300",
+            svgType: "residual_highway",
+            bubbles: [
+              { speaker: "Prof. Fei-Fei", text: "From Stanford ResNets to modern Transformers, the Residual Stream is the secret to stacking 100+ deep layers without losing signal!", pos: "left" },
+              { speaker: "Token Bot", text: "Instead of overwriting me at every layer, Attention and MLPs just read from my conveyor belt and ADD helpful updates (+Δx) on top!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Think of the Residual Stream as a shared whiteboard passed from Layer 1 to Layer 80—each specialist professor adds sticky notes without erasing the board!",
+            noteUndergrad: "🎓 CS Lecture: Pre-LayerNorm / RMSNorm stabilizes activation magnitudes before each sub-layer, while the identity skip connection guarantees clean gradient flow.",
+            noteAdv: "🔬 Frontier Math: Mechanistic interpretability views the residual stream as a linear communication bus shared by all upstream and downstream attention heads and MLP neurons."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#86efac]",
+            captionTop: "Inside the SwiGLU MLP: Where Factual Knowledge Lives!",
+            sfx: "NEURON #8412 FIRES! 💡",
+            sfxColor: "bg-[#4f46e5] text-white",
+            svgType: "mlp_vault",
+            bubbles: [
+              { speaker: "Prof. Ranjay", text: "Where does an LLM store the fact that Rayleigh scattering makes the sky blue, or Paris is the capital of France? Right here in the MLP weights!", pos: "left" },
+              { speaker: "MLP Neuron", text: "I detected 'river + bank + was' on the conveyor belt! Injecting 'muddy', 'steep', and 'water' features into the vector!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Attention gathers the clues ('What is the capital of France?'); the MLP opens the encyclopedia drawer and stamps 'Paris' onto the token!",
+            noteUndergrad: "🎓 CS Lecture: Early layers (1–10) handle grammar and subword reassembly; middle layers (15–60) extract semantic concepts and world facts; final layers sharpen next-word predictions.",
+            noteAdv: "🔬 Frontier Math: SwiGLU computes MLP(x) = (SiLU(x W_gate) ⊙ (x W_up)) W_down, using multiplicative gating to create sharp feature detectors in ℝ^(d_ff)."
+          }
+        ]
+      },
+      {
+        id: 5,
+        badge: "Stage 5",
+        title: "The Two-Speed Engine (Prefill, Decode & KV Cache)",
+        subtitle: "Why Reading Your Prompt Is Fast Parallel Math, While Speaking Is One Token at a Time",
+        color: "#fb7185",
+        teaser: "The #1 systems secret behind why AI feels fast (and why GPUs run out of memory)!",
+        eli5: "When you hand an LLM a 1,000-word prompt, it reads all 1,000 words AT THE EXACT SAME TIME in one giant flash (that's called Prefill!). While reading, it writes down every word's Key and Value notes on a sticky pad called the KV Cache. Why? Because when it starts speaking its answer one word at a time (Decode), it never has to re-read your 1,000-word prompt from scratch—it just checks its sticky notes!",
+        undergrad: "LLM inference has two distinct hardware regimes: (1) The Prefill Phase processes all S prompt tokens in parallel using compute-bound Matrix-Matrix multiplications, determining Time to First Token (TTFT) and populating the KV Cache. (2) The Decode Phase generates tokens sequentially one by one; using the cached Keys and Values of all past tokens, it only computes Q, K, V for the 1 new token, making Decode memory-bandwidth-bound (Inter-Token Latency / ITL).",
+        adv: "Without KV caching, generating N tokens requires O(N³) total attention FLOPs; with KV caching, each decode step appends k_t, v_t to the cache and performs a Matrix-Vector product of cost O(t), reducing total complexity to O(N²). However, KV cache memory grows as 2 × L × H_kv × d_h × S × precision_bytes—which is why vLLM's PagedAttention, GQA/MLA, and Prefill-Decode Disaggregation are critical in production.",
+        panels: [
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#fda4af]",
+            captionTop: "Phase 1: PREFILL (Parallel Prompt Ingestion)",
+            sfx: "ALL AT ONCE! ⚡",
+            sfxColor: "bg-zinc-900 text-amber-300",
+            svgType: "prefill_parallel",
+            bubbles: [
+              { speaker: "GPU Tensor Core", text: "You gave me 6 prompt tokens? Ialready know all 6 of them! I'll crunch all 6 through all 80 layers simultaneously!", pos: "left" },
+              { speaker: "KV Cache Vault", text: "And at every layer, I'm saving all 6 Keys (K) and Values (V) into fast GPU memory so we NEVER compute them again!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Prefill is like speed-reading the whole question in one gulp and highlighting the key facts before you say your first word!",
+            noteUndergrad: "🎓 CS Lecture: Prefill latency is measured as TTFT (Time to First Token) and is compute-bound because large token matrices saturate GPU Tensor Cores.",
+            noteAdv: "🔬 Frontier Math: Prefix Caching allows servers to reuse precomputed KV cache blocks across users who share the same system prompt or document context!"
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#a5f3fc]",
+            captionTop: "Phase 2: DECODE (Token-by-Token Generation with KV Cache)",
+            sfx: "1 NEW TOKEN! 📝",
+            sfxColor: "bg-[#4f46e5] text-white",
+            svgType: "decode_kvcache",
+            bubbles: [
+              { speaker: "Token Bot", text: "Now we generate new words one by one! Without the KV Cache, generating Word #1,000 would force the GPU to recompute Words #1 to #999 from scratch!", pos: "left" },
+              { speaker: "Prof. Ranjay", text: "With the KV Cache, we ONLY compute Q, K, V for the 1 brand-new token and compare its Query against the cached Keys!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Instead of re-baking the whole cake for every new sprinkle, the KV Cache saves the cake and just adds one sprinkle at a time!",
+            noteUndergrad: "🎓 CS Lecture: Decode speed is measured as ITL (Inter-Token Latency, e.g., ~15ms/token) and is bottlenecked by how fast HBM memory can stream weights + KV cache.",
+            noteAdv: "🔬 Frontier Math: For Llama-3-8B in FP16 (L=32, H_kv=8, d_h=128), an 8K context takes ~1 GB of KV cache per request—often exceeding the model weights themselves at high batch sizes!"
+          }
+        ]
+      },
+      {
+        id: 6,
+        badge: "Stage 6",
+        title: "Rolling the Loaded Dice (Logits, Softmax & Sampling)",
+        subtitle: "How the Final Vector Picks the Next Word Using Temperature, Top-k & Top-p",
+        color: "#6366f1",
+        teaser: "Why the exact same prompt can give a creative answer or a strict deterministic answer!",
+        eli5: "Our last token has climbed all 80 floors of the Transformer tower! Now it holds a super-smart summary of what word should come next. At the rooftop, a judge scores all 128,000 words in the dictionary (those raw scores are called Logits). A machine called Softmax turns those scores into percentages that add up to 100% ('muddy': 45%, 'steep': 30%, 'quiet': 10%). Finally, we turn the Temperature knob (0 = always pick #1; higher = spice it up!) and roll a loaded die to pick the winning word!",
+        undergrad: "The final normalized hidden state h_final ∈ ℝ^(d_model) of the last token is multiplied by the Unembedding Matrix W_U ∈ ℝ^(d_model × |V|) to produce a logit vector z ∈ ℝ^(|V|). Before Softmax, logits are divided by Temperature T: P(w_i) = exp(z_i / T) / Σ_j exp(z_j / T). Top-k keeps only the k highest-probability tokens, while Top-p (Nucleus Sampling) keeps the smallest set of top tokens whose cumulative probability exceeds p.",
+        adv: "As T → 0, Softmax approaches a hard argmax (Greedy Decoding), maximizing likelihood but risking repetitive degenerate loops. As T → ∞, P(w_i) → 1/|V| (uniform noise). Nucleus Sampling (Holtzman et al., 2020) dynamically adapts the candidate pool size |V^(p)| to the entropy of the distribution—narrowing to 1–2 tokens when the model is certain (e.g. '2 + 2 = 4') and expanding when many continuations are valid.",
+        panels: [
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#c7d2fe]",
+            captionTop: "Rooftop of Layer 80: The 128,000-Word Scoreboard (Logits)!",
+            sfx: "128,256 SCORES! 🎯",
+            sfxColor: "bg-zinc-900 text-amber-300",
+            svgType: "logits_scoreboard",
+            bubbles: [
+              { speaker: "Unembedding Judge", text: "I just compared the final 4,096-D vector of 'was' against every single word in our 128,256-token dictionary!", pos: "left" },
+              { speaker: "Prof. Fei-Fei", text: "' mud' scored +11.4, ' steep' scored +10.8, ' flooded' scored +9.9, and ' banana' scored -14.2!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Only the very LAST token's rooftop vector is used to predict the brand-new word that comes next!",
+            noteUndergrad: "🎓 CS Lecture: Raw logits z_i range from -∞ to +∞; exponentiating exp(z_i / T) makes all values positive before normalizing by their sum.",
+            noteAdv: "🔬 Frontier Math: Often W_U shares weights (weight tying) or is learned symmetrically with the input embedding matrix W_E^T ∈ ℝ^(d_model × |V|)."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#ffd166]",
+            captionTop: "The Creativity Knob: Temperature (T) & Top-p Nucleus Sampling!",
+            sfx: "ROLL THE DICE! 🎲",
+            sfxColor: "bg-[#e11d48] text-white",
+            svgType: "temperature_dice",
+            bubbles: [
+              { speaker: "Prof. Ranjay", text: "Wait! Why doesn't the LLM just always pick the #1 highest-scoring word? Because greedy picking sounds robotic and gets stuck in loops!", pos: "left" },
+              { speaker: "Sampling Dice", text: "First, Top-p = 0.9 chops off the weird bottom 10% tail ('banana', 'spaceship'). Then we roll a weighted die among the top contenders!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Low Temperature (T=0) is a strict librarian who always picks the #1 safest word; High Temperature (T=1.2) is a jazz musician who tries surprising words!",
+            noteUndergrad: "🎓 CS Lecture: Dividing logits by T < 1 sharpens peaks (amplifying differences), while T > 1 flattens the probability distribution.",
+            noteAdv: "🔬 Frontier Math: Speculative Decoding uses a tiny draft model to guess 5 tokens ahead and verifies all 5 in a single parallel target-model forward pass with mathematically identical sampling!"
+          }
+        ]
+      },
+      {
+        id: 7,
+        badge: "Stage 7 (Finale)",
+        title: "The Autoregressive Loop, Reasoning & RLHF",
+        subtitle: "How One Picked Word Becomes a Complete, Helpful, Step-by-Step Final Answer",
+        color: "#10b981",
+        teaser: "Closing the loop: How tokens feed back into the input, think step-by-step, and know when to stop!",
+        eli5: "We just picked ONE single word: 'muddy'! How do we get the rest of the sentence? We glue 'muddy' onto the end of your prompt and run the whole conveyor belt again to pick the next word ('and'), then again ('covered'), and again ('in'), until the model picks a special invisible STOP sign token (<|eot_id|>)! And if you ask a hard math puzzle, modern Reasoning LLMs write out a scratchpad of 'thinking tokens' first—because every word they write out loud gives their brain extra memory columns to think with!",
+        undergrad: "Autoregressive generation models the joint probability of a response Y = (y_1, ..., y_M) as a product of conditionals: P(Y|X) = Π_{t=1}^M P(y_t | X, y_<t). A raw base model trained only on internet next-token prediction will merely continue a document; Post-Training (Supervised Fine-Tuning on instruction pairs + RLHF / DPO / GRPO reinforcement learning) aligns the model to act as a helpful, honest assistant and emit `<|eot_id|>` when finished.",
+        adv: "Why does Chain-of-Thought (Wei et al.) / Test-Time Compute Scaling (OpenAI o1 / DeepSeek-R1 GRPO) unlock complex reasoning? A single forward pass has fixed circuit depth L (e.g., 80 serial operations). By emitting intermediate reasoning tokens <think>...</think> into the context window, the model converts sequential token generation into arbitrary serial computation depth, storing intermediate variables directly inside the KV Cache!",
+        panels: [
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#86efac]",
+            captionTop: "The Autoregressive Ouroboros: Eating Your Own Output!",
+            sfx: "LOOP UNTIL STOP! 🔄",
+            sfxColor: "bg-zinc-900 text-amber-300",
+            svgType: "autoregressive_loop",
+            bubbles: [
+              { speaker: "Token Bot", text: "I was just born as Token #7 (' muddy')! Now I hop right back into the input line so the model can predict Token #8!", pos: "left" },
+              { speaker: "Detokenizer", text: "As each new token ID pops out, I translate its ID back into readable English text and stream it to Nishant's screen in real time!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: The LLM writes a story by playing a game of telephone with itself—adding one word at a time until it plays the invisible 'The End' card!",
+            noteUndergrad: "🎓 CS Lecture: Generation halts as soon as the model samples the dedicated End-of-Turn token (`<|eot_id|>` or `<|endoftext|>`), or hits `max_tokens`.",
+            noteAdv: "🔬 Frontier Math: Because each step appends 1 KV entry to the cache, generating M tokens requires exactly 1 Prefill pass + (M - 1) cached Decode passes."
+          },
+          {
+            span: "lg:col-span-6",
+            bg: "bg-[#fde047]",
+            captionTop: "Why 'Thinking Out Loud' (Chain-of-Thought) Makes LLMs Genius!",
+            sfx: "TEST-TIME COMPUTE! 🧠",
+            sfxColor: "bg-[#4f46e5] text-white",
+            svgType: "cot_alignment",
+            bubbles: [
+              { speaker: "Prof. Ranjay", text: "A Transformer has a fixed number of layers (say, 80). If you force it to answer a 20-step math proof in ONE single token, 80 layers isn't enough!", pos: "left" },
+              { speaker: "Prof. Fei-Fei", text: "But when it writes intermediate 'Thinking Tokens' first, every scratchpad word gets stored in the KV Cache—turning the context window into external working memory!", pos: "right" }
+            ],
+            noteEli5: "🎈 ELI5: Even a math professor can't multiply 489 × 912 in a split second without scratch paper! Thinking tokens are the LLM's scratch paper!",
+            noteUndergrad: "🎓 CS Lecture: Pre-training (trillions of web tokens) teaches world knowledge; SFT + RLHF / GRPO teaches instruction following, safety, and step-by-step verification.",
+            noteAdv: "🔬 Frontier Math: You've completed the full journey from keystroke to final answer—now test all 7 interactive tensor labs and take the checkpoint quiz below!"
+          }
+        ]
+      }
+    ];
+
+    const QUIZ_QUESTIONS = [
+      {
+        q: "1. Why did early LLMs famously struggle to count the number of 'r's in 'strawberry'?",
+        options: [
+          "Because GPUs cannot count past the number 2",
+          "Because BPE Tokenization slices 'strawberry' into subword integer IDs (like ['str', 'aw', 'berry']) rather than individual letters",
+          "Because strawberries are red and LLMs only see blue"
+        ],
+        correct: 1,
+        explanation: "Spot on! The Transformer never sees raw characters—it receives subword Token IDs from the BPE tokenizer."
+      },
+      {
+        q: "2. In Self-Attention, how does the word 'bank' in 'The bank by the river' know it means a shoreline and not a financial vault?",
+        options: [
+          "Its Query (Q) vector matches the Key (K) vector of 'river', blending 'river's Value (V) vector into 'bank's representation",
+          "The tokenizer uses a different ID for river banks vs. money banks",
+          "Temperature sampling randomly deletes the word 'money'"
+        ],
+        correct: 0,
+        explanation: "Exactly! Raw embeddings are identical for both meanings of 'bank'; Self-Attention (softmax(QK^T/√d_k)V) dynamically pulls context from 'river'!"
+      },
+      {
+        q: "3. If Self-Attention is where tokens talk to each other, what is the primary job of the MLP (Feed-Forward Network) layers?",
+        options: [
+          "Sorting words in alphabetical order",
+          "Acting as learned Key-Value memory neurons that retrieve factual associations and transform each token's representation",
+          "Converting text into MP3 audio"
+        ],
+        correct: 1,
+        explanation: "Nailed it! Around 2/3 of an LLM's parameters live in the MLP layers, which act as pattern detectors and factual memory banks along the Residual Stream."
+      },
+      {
+        q: "4. Why do LLMs maintain a 'KV Cache' in GPU memory during inference?",
+        options: [
+          "To store user passwords",
+          "So that during token-by-token Decode, the model reuses past tokens' Key and Value vectors instead of recomputing the entire prompt from scratch at every word",
+          "To make the font look sharper on screen"
+        ],
+        correct: 1,
+        explanation: "Bingo! Prefill computes and caches K and V for the prompt in parallel; Decode reuses that cache so each new token only computes Q, K, V for itself!"
+      },
+      {
+        q: "5. Why does writing out a Chain-of-Thought (<think> step 1, step 2...) help an LLM solve much harder math and logic problems?",
+        options: [
+          "Because each generated scratchpad token adds a new column to the KV Cache, giving the fixed-depth Transformer extra serial computation steps and working memory",
+          "Because it gives the GPU fan time to cool down",
+          "Because longer answers use smaller numbers"
+        ],
+        correct: 0,
+        explanation: "100% correct! A single forward pass has fixed layer depth L; emitting intermediate tokens turns the context window into an external working memory scratchpad!"
+      }
+    ];
+
+    // =========================================================================
+    // CUSTOM VECTOR COMIC ILLUSTRATIONS FOR ALL 15 PANELS
+    // =========================================================================
+    function getComicSvg(type) {
+      switch (type) {
+        case 'prompt_keystroke':
+          return `<svg viewBox="0 0 360 145" class="w-full h-36 mx-auto">
+            <rect x="15" y="20" width="165" height="105" rx="10" fill="#18181b" stroke="#ffffff" stroke-width="2.5"/>
+            <text x="28" y="48" font-family="JetBrains Mono" font-size="11" fill="#a5b4fc">&gt; Prompt:</text>
+            <text x="28" y="70" font-family="JetBrains Mono" font-size="12" font-weight="bold" fill="#ffd166">"The bank by</text>
+            <text x="28" y="88" font-family="JetBrains Mono" font-size="12" font-weight="bold" fill="#ffd166"> the river was"</text>
+            <path d="M188 72 L222 72" stroke="#4f46e5" stroke-width="5"/>
+            <rect x="228" y="20" width="115" height="105" rx="10" fill="#4f46e5" stroke="#18181b" stroke-width="3"/>
+            <text x="285" y="55" text-anchor="middle" font-family="Bangers" font-size="17" fill="#ffffff">BPE TOKENIZER</text>
+            <text x="285" y="82" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold" fill="#ffd166">[791, 6201, 555,</text>
+            <text x="285" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold" fill="#ffd166"> 279, 7500, 574]</text>
+          </svg>`;
+
+        case 'bpe_lego':
+          return `<svg viewBox="0 0 360 145" class="w-full h-36 mx-auto">
+            <text x="180" y="26" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">WORD: "unbelievable" ➔ 3 SUBWORD LEGO BRICKS</text>
+            <rect x="25" y="44" width="90" height="72" rx="8" fill="#ffd166" stroke="#18181b" stroke-width="3"/>
+            <text x="70" y="75" text-anchor="middle" font-family="JetBrains Mono" font-size="18" font-weight="bold" fill="#18181b">"un"</text>
+            <text x="70" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#e11d48">ID: 359</text>
+
+            <rect x="135" y="44" width="95" height="72" rx="8" fill="#4cc9f0" stroke="#18181b" stroke-width="3"/>
+            <text x="182" y="75" text-anchor="middle" font-family="JetBrains Mono" font-size="18" font-weight="bold" fill="#18181b">"believ"</text>
+            <text x="182" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#18181b">ID: 28491</text>
+
+            <rect x="250" y="44" width="85" height="72" rx="8" fill="#06d6a0" stroke="#18181b" stroke-width="3"/>
+            <text x="292" y="75" text-anchor="middle" font-family="JetBrains Mono" font-size="18" font-weight="bold" fill="#18181b">"able"</text>
+            <text x="292" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#18181b">ID: 1462</text>
+          </svg>`;
+
+        case 'strawberry_tokens':
+          return `<svg viewBox="0 0 520 130" class="w-full h-32 mx-auto">
+            <rect x="20" y="25" width="135" height="80" rx="10" fill="#18181b" stroke="#ffffff" stroke-width="2.5"/>
+            <text x="87" y="56" text-anchor="middle" font-family="Bangers" font-size="16" fill="#fda4af">HUMAN SEES 10 LETTERS:</text>
+            <text x="87" y="82" text-anchor="middle" font-family="JetBrains Mono" font-size="13" font-weight="bold" fill="#ffffff">s-t-r-a-w-b-e-r-r-y</text>
+            <path d="M165 65 L205 65" stroke="#18181b" stroke-width="4"/>
+            <rect x="215" y="25" width="285" height="80" rx="10" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="357" y="48" text-anchor="middle" font-family="Bangers" font-size="15" fill="#4f46e5">LLM ONLY SEES 3 SEALED INTEGER BOXES:</text>
+            <rect x="232" y="58" width="76" height="34" rx="6" fill="#ffd166" stroke="#18181b" stroke-width="2"/>
+            <text x="270" y="80" text-anchor="middle" font-family="JetBrains Mono" font-size="12" font-weight="bold">#496 (str)</text>
+            <rect x="318" y="58" width="76" height="34" rx="6" fill="#a5f3fc" stroke="#18181b" stroke-width="2"/>
+            <text x="356" y="80" text-anchor="middle" font-family="JetBrains Mono" font-size="12" font-weight="bold">#675 (aw)</text>
+            <rect x="404" y="58" width="82" height="34" rx="6" fill="#fda4af" stroke="#18181b" stroke-width="2"/>
+            <text x="445" y="80" text-anchor="middle" font-family="JetBrains Mono" font-size="12" font-weight="bold">#15717 (berry)</text>
+          </svg>`;
+
+        case 'star_map_embeddings':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="15" y="15" width="330" height="120" rx="12" fill="#0f172a" stroke="#18181b" stroke-width="3"/>
+            <!-- Coordinate axes -->
+            <line x1="40" y1="115" x2="320" y2="115" stroke="#475569" stroke-width="2"/>
+            <line x1="40" y1="25" x2="40" y2="115" stroke="#475569" stroke-width="2"/>
+            <!-- Cluster 1: Water -->
+            <circle cx="95" cy="52" r="7" fill="#38bdf8"/><text x="108" y="56" font-family="JetBrains Mono" font-size="11" fill="#38bdf8">"river"</text>
+            <circle cx="82" cy="70" r="6" fill="#38bdf8"/><text x="94" y="74" font-family="JetBrains Mono" font-size="10" fill="#bae6fd">"water"</text>
+            <!-- Ambiguous 'bank' in the middle -->
+            <circle cx="178" cy="68" r="9" fill="#ffd166" stroke="#ffffff" stroke-width="2"/>
+            <text x="178" y="50" text-anchor="middle" font-family="Bangers" font-size="15" fill="#ffd166">"bank" [0.14, -0.82, ...]</text>
+            <!-- Cluster 2: Finance -->
+            <circle cx="265" cy="55" r="7" fill="#4ade80"/><text x="278" y="59" font-family="JetBrains Mono" font-size="11" fill="#4ade80">"loan"</text>
+            <circle cx="255" cy="78" r="6" fill="#4ade80"/><text x="268" y="82" font-family="JetBrains Mono" font-size="10" fill="#bbf7d0">"vault"</text>
+          </svg>`;
+
+        case 'rope_clock':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <g transform="translate(65,75)">
+              <circle cx="0" cy="0" r="42" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+              <line x1="0" y1="0" x2="26" y2="-24" stroke="#e11d48" stroke-width="4" stroke-linecap="round"/>
+              <text x="0" y="58" text-anchor="middle" font-family="Bangers" font-size="14">POS 1: θ = 1×ω</text>
+            </g>
+            <g transform="translate(180,75)">
+              <circle cx="0" cy="0" r="42" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+              <line x1="0" y1="0" x2="36" y2="10" stroke="#4f46e5" stroke-width="4" stroke-linecap="round"/>
+              <text x="0" y="58" text-anchor="middle" font-family="Bangers" font-size="14">POS 2: θ = 2×ω</text>
+            </g>
+            <g transform="translate(295,75)">
+              <circle cx="0" cy="0" r="42" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+              <line x1="0" y1="0" x2="-12" y2="35" stroke="#059669" stroke-width="4" stroke-linecap="round"/>
+              <text x="0" y="58" text-anchor="middle" font-family="Bangers" font-size="14">POS 3: θ = 3×ω</text>
+            </g>
+          </svg>`;
+
+        case 'qkv_hats':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="18" y="24" width="68" height="100" rx="8" fill="#ffd166" stroke="#18181b" stroke-width="3"/>
+            <text x="52" y="55" text-anchor="middle" font-family="Bangers" font-size="20" fill="#18181b">QUERY (Q)</text>
+            <text x="52" y="80" text-anchor="middle" font-family="Comic Neue" font-weight="bold" font-size="11" fill="#18181b">"Looking for</text>
+            <text x="52" y="95" text-anchor="middle" font-family="Comic Neue" font-weight="bold" font-size="11" fill="#18181b">context clues!"</text>
+
+            <rect x="96" y="24" width="68" height="100" rx="8" fill="#4cc9f0" stroke="#18181b" stroke-width="3"/>
+            <text x="130" y="55" text-anchor="middle" font-family="Bangers" font-size="20" fill="#18181b">KEY (K)</text>
+            <text x="130" y="80" text-anchor="middle" font-family="Comic Neue" font-weight="bold" font-size="11" fill="#18181b">"I am a</text>
+            <text x="130" y="95" text-anchor="middle" font-family="Comic Neue" font-weight="bold" font-size="11" fill="#18181b">water noun!"</text>
+
+            <rect x="174" y="24" width="68" height="100" rx="8" fill="#06d6a0" stroke="#18181b" stroke-width="3"/>
+            <text x="208" y="55" text-anchor="middle" font-family="Bangers" font-size="20" fill="#18181b">VALUE (V)</text>
+            <text x="208" y="80" text-anchor="middle" font-family="Comic Neue" font-weight="bold" font-size="11" fill="#18181b">"Here is my</text>
+            <text x="208" y="95" text-anchor="middle" font-family="Comic Neue" font-weight="bold" font-size="11" fill="#18181b">river meaning!"</text>
+          </svg>`;
+
+        case 'causal_mask':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="45" y="18" width="170" height="114" rx="8" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <!-- 3x3 Causal Grid -->
+            <rect x="65" y="34" width="40" height="26" fill="#86efac" stroke="#18181b" stroke-width="2"/><text x="85" y="51" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold">1.0</text>
+            <rect x="110" y="34" width="40" height="26" fill="#fecdd3" stroke="#18181b" stroke-width="2"/><text x="130" y="51" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold">-∞</text>
+            <rect x="155" y="34" width="40" height="26" fill="#fecdd3" stroke="#18181b" stroke-width="2"/><text x="175" y="51" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold">-∞</text>
+
+            <rect x="65" y="64" width="40" height="26" fill="#86efac" stroke="#18181b" stroke-width="2"/><text x="85" y="81" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold">0.3</text>
+            <rect x="110" y="64" width="40" height="26" fill="#86efac" stroke="#18181b" stroke-width="2"/><text x="130" y="81" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold">0.7</text>
+            <rect x="155" y="64" width="40" height="26" fill="#fecdd3" stroke="#18181b" stroke-width="2"/><text x="175" y="81" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold">-∞</text>
+
+            <rect x="65" y="94" width="40" height="26" fill="#86efac" stroke="#18181b" stroke-width="2"/><text x="85" y="111" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold">0.1</text>
+            <rect x="110" y="94" width="40" height="26" fill="#86efac" stroke="#18181b" stroke-width="2"/><text x="130" y="111" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold">0.6</text>
+            <rect x="155" y="94" width="40" height="26" fill="#86efac" stroke="#18181b" stroke-width="2"/><text x="175" y="111" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold">0.3</text>
+          </svg>`;
+
+        case 'polysemy_shift':
+          return `<svg viewBox="0 0 260 150" class="w-full h-36 mx-auto">
+            <rect x="20" y="22" width="220" height="106" rx="10" fill="#18181b" stroke="#ffffff" stroke-width="2.5"/>
+            <text x="130" y="50" text-anchor="middle" font-family="Bangers" font-size="16" fill="#ffd166">"bank" + 0.68 × V("river")</text>
+            <path d="M130 58 L130 82" stroke="#06d6a0" stroke-width="4"/>
+            <rect x="40" y="84" width="180" height="32" rx="6" fill="#06d6a0"/>
+            <text x="130" y="105" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">🌊 CONTEXTUALIZED: SHORELINE!</text>
+          </svg>`;
+
+        case 'residual_highway':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <!-- Residual Conveyor Belt -->
+            <line x1="25" y1="95" x2="335" y2="95" stroke="#18181b" stroke-width="8"/>
+            <line x1="25" y1="95" x2="335" y2="95" stroke="#ffd166" stroke-width="4" stroke-dasharray="10,6"/>
+            <rect x="55" y="25" width="95" height="45" rx="8" fill="#c084fc" stroke="#18181b" stroke-width="3"/>
+            <text x="102" y="52" text-anchor="middle" font-family="Bangers" font-size="15" fill="#18181b">+ ATTENTION(x)</text>
+            <path d="M102 70 L102 92" stroke="#18181b" stroke-width="3.5"/>
+
+            <rect x="205" y="25" width="95" height="45" rx="8" fill="#06d6a0" stroke="#18181b" stroke-width="3"/>
+            <text x="252" y="52" text-anchor="middle" font-family="Bangers" font-size="15" fill="#18181b">+ SwiGLU MLP(x)</text>
+            <path d="M252 70 L252 92" stroke="#18181b" stroke-width="3.5"/>
+            <text x="180" y="128" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">RESIDUAL STREAM HIGHWAY (x_next = x + Δ_attn + Δ_mlp)</text>
+          </svg>`;
+
+        case 'mlp_vault':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="20" y="45" width="75" height="60" rx="8" fill="#ffd166" stroke="#18181b" stroke-width="3"/>
+            <text x="57" y="78" text-anchor="middle" font-family="Bangers" font-size="14" fill="#18181b">4,096-D IN</text>
+            <path d="M98 75 L125 45 M98 75 L125 75 M98 75 L125 105" stroke="#18181b" stroke-width="2.5"/>
+            <rect x="128" y="18" width="104" height="114" rx="10" fill="#18181b" stroke="#06d6a0" stroke-width="3"/>
+            <text x="180" y="48" text-anchor="middle" font-family="Bangers" font-size="15" fill="#06d6a0">14,336 NEURONS</text>
+            <text x="180" y="74" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#ffd166">Key: "river shore"</text>
+            <text x="180" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#ffffff">Val: +"muddy"</text>
+            <path d="M235 45 L262 75 M235 75 L262 75 M235 105 L262 75" stroke="#18181b" stroke-width="2.5"/>
+            <rect x="265" y="45" width="75" height="60" rx="8" fill="#06d6a0" stroke="#18181b" stroke-width="3"/>
+            <text x="302" y="78" text-anchor="middle" font-family="Bangers" font-size="14" fill="#18181b">4,096-D OUT</text>
+          </svg>`;
+
+        case 'prefill_parallel':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="20" y="24" width="145" height="102" rx="10" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="92" y="48" text-anchor="middle" font-family="Bangers" font-size="15" fill="#18181b">ALL 6 PROMPT TOKENS</text>
+            <text x="92" y="72" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold" fill="#4f46e5">[T1, T2, T3, T4, T5, T6]</text>
+            <text x="92" y="102" text-anchor="middle" font-family="Bangers" font-size="13" fill="#059669">PARALLEL MATRIX MATH!</text>
+            <path d="M170 75 L202 75" stroke="#18181b" stroke-width="4"/>
+            <rect x="208" y="24" width="132" height="102" rx="10" fill="#e11d48" stroke="#18181b" stroke-width="3"/>
+            <text x="274" y="55" text-anchor="middle" font-family="Bangers" font-size="17" fill="#ffffff">KV CACHE POPULATED</text>
+            <text x="274" y="82" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#ffd166">K_1..6, V_1..6 SAVED</text>
+            <text x="274" y="105" text-anchor="middle" font-family="Bangers" font-size="13" fill="#ffffff">TTFT: ~38 ms</text>
+          </svg>`;
+
+        case 'decode_kvcache':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="20" y="25" width="175" height="100" rx="10" fill="#fef08a" stroke="#18181b" stroke-width="3"/>
+            <text x="107" y="52" text-anchor="middle" font-family="Bangers" font-size="15" fill="#18181b">📦 CACHED K &amp; V (TOKENS 1–6)</text>
+            <text x="107" y="78" text-anchor="middle" font-family="Bangers" font-size="14" fill="#059669">0 FLOPs RECOMPUTED!</text>
+            <text x="107" y="102" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#18181b">Read straight from HBM</text>
+            <rect x="215" y="25" width="125" height="100" rx="10" fill="#4f46e5" stroke="#18181b" stroke-width="3"/>
+            <text x="277" y="55" text-anchor="middle" font-family="Bangers" font-size="16" fill="#ffffff">NEW TOKEN #7</text>
+            <text x="277" y="80" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#ffd166">Only 1 Q, K, V</text>
+            <text x="277" y="102" text-anchor="middle" font-family="Bangers" font-size="13" fill="#86efac">ITL: ~14 ms/tok</text>
+          </svg>`;
+
+        case 'logits_scoreboard':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="20" y="20" width="320" height="110" rx="10" fill="#18181b" stroke="#ffffff" stroke-width="2.5"/>
+            <text x="180" y="42" text-anchor="middle" font-family="Bangers" font-size="16" fill="#ffd166">LOGITS z = h_final × W_U ➔ SOFTMAX PROBABILITIES</text>
+            <rect x="38" y="54" width="180" height="18" rx="4" fill="#06d6a0"/><text x="228" y="68" font-family="JetBrains Mono" font-size="11" fill="#ffffff">" muddy" (41%)</text>
+            <rect x="38" y="78" width="125" height="18" rx="4" fill="#4cc9f0"/><text x="173" y="92" font-family="JetBrains Mono" font-size="11" fill="#ffffff">" steep" (29%)</text>
+            <rect x="38" y="102" width="75" height="18" rx="4" fill="#c084fc"/><text x="123" y="116" font-family="JetBrains Mono" font-size="11" fill="#ffffff">" flooded" (18%)</text>
+          </svg>`;
+
+        case 'temperature_dice':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="20" y="25" width="145" height="100" rx="10" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="92" y="55" text-anchor="middle" font-family="Bangers" font-size="17" fill="#4f46e5">LOW TEMP (T = 0.0)</text>
+            <text x="92" y="80" text-anchor="middle" font-family="Comic Neue" font-weight="bold" font-size="12" fill="#18181b">100% Greedy Pick</text>
+            <text x="92" y="102" text-anchor="middle" font-family="Bangers" font-size="14" fill="#059669">STRICT &amp; REPEATABLE</text>
+
+            <rect x="195" y="25" width="145" height="100" rx="10" fill="#ffd166" stroke="#18181b" stroke-width="3"/>
+            <text x="267" y="55" text-anchor="middle" font-family="Bangers" font-size="17" fill="#e11d48">HIGH TEMP (T = 1.2)</text>
+            <text x="267" y="80" text-anchor="middle" font-family="Comic Neue" font-weight="bold" font-size="12" fill="#18181b">Flatter Distribution</text>
+            <text x="267" y="102" text-anchor="middle" font-family="Bangers" font-size="14" fill="#18181b">🎲 CREATIVE &amp; WILD!</text>
+          </svg>`;
+
+        case 'autoregressive_loop':
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="25" y="30" width="310" height="90" rx="12" fill="#ffffff" stroke="#18181b" stroke-width="3"/>
+            <text x="180" y="58" text-anchor="middle" font-family="Bangers" font-size="18" fill="#18181b">🔄 AUTOREGRESSIVE FEEDBACK LOOP</text>
+            <text x="180" y="84" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="bold" fill="#4f46e5">"The bank by the river was" + " muddy" + " and" ➔ &lt;|eot_id|&gt;</text>
+            <text x="180" y="106" text-anchor="middle" font-family="Bangers" font-size="14" fill="#059669">STOPS WHEN END-OF-TURN TOKEN IS SAMPLED!</text>
+          </svg>`;
+
+        case 'cot_alignment':
+        default:
+          return `<svg viewBox="0 0 360 150" class="w-full h-36 mx-auto">
+            <rect x="20" y="24" width="155" height="102" rx="10" fill="#fef08a" stroke="#18181b" stroke-width="3"/>
+            <text x="97" y="52" text-anchor="middle" font-family="Bangers" font-size="16" fill="#18181b">📝 &lt;think&gt; SCRATCHPAD</text>
+            <text x="97" y="76" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="bold" fill="#18181b">1. 2x + 3 = 11</text>
+            <text x="97" y="94" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="bold" fill="#18181b">2. 2x = 8 ➔ x = 4</text>
+            <path d="M180 75 L205 75" stroke="#18181b" stroke-width="4"/>
+            <rect x="210" y="24" width="130" height="102" rx="10" fill="#06d6a0" stroke="#18181b" stroke-width="3"/>
+            <text x="275" y="58" text-anchor="middle" font-family="Bangers" font-size="17" fill="#18181b">✨ FINAL ANSWER</text>
+            <text x="275" y="84" text-anchor="middle" font-family="Bangers" font-size="14" fill="#18181b">RLHF + CoT VERIFIED!</text>
+          </svg>`;
+      }
+    }
+
+    // =========================================================================
+    // INTERACTIVE LABS FOR ALL 7 STAGES
+    // =========================================================================
+    function renderEpisodeLab(epId) {
+      if (epId === 1) {
+        const samples = {
+          unbelievable: {
+            raw: "unbelievable",
+            tokens: ["un", "believ", "able"],
+            ids: [359, 28491, 1462],
+            bytes: 12,
+            insight: "Notice how BPE splits 'unbelievable' into 3 morphological subwords: prefix 'un', root 'believ', and suffix 'able'!"
+          },
+          strawberry: {
+            raw: "strawberry",
+            tokens: ["str", "aw", "berry"],
+            ids: [496, 675, 15717],
+            bytes: 10,
+            insight: "The famous 'strawberry' trap! Because the LLM receives integer IDs [496, 675, 15717], the individual 'r' characters are hidden inside token #496 and #15717!"
+          },
+          riverbank: {
+            raw: "The bank by the river",
+            tokens: ["The", " bank", " by", " the", " river"],
+            ids: [791, 6201, 555, 279, 7500],
+            bytes: 21,
+            insight: "Notice the leading space included inside ' bank' (ID 6201) and ' river' (ID 7500). That's how BPE preserves exact whitespace without wasting separate space tokens!"
+          },
+          python: {
+            raw: "def calc_attn(Q, K):",
+            tokens: ["def", " calc", "_attn", "(Q", ",", " K", "):"],
+            ids: [755, 11290, 48120, 4419, 11, 736, 1680],
+            bytes: 20,
+            insight: "Modern code tokenizers merge common syntax like '):' into single tokens so code generation uses fewer steps!"
+          }
+        };
+        const cur = samples[ep1TokenSample] || samples.unbelievable;
+        const colors = ["bg-[#ffd166]", "bg-[#4cc9f0]", "bg-[#86efac]", "bg-[#fda4af]", "bg-[#c084fc]", "bg-[#fde047]", "bg-[#a5f3fc]"];
+        let pills = '';
+        cur.tokens.forEach((tok, i) => {
+          const disp = tok.replace(/ /g, '␣');
+          pills += `
+            <div class="${colors[i % colors.length]} text-zinc-900 px-3 py-2 rounded-xl border-2 border-white shadow-[2px_2px_0px_#fff] text-center">
+              <div class="font-mono-code font-extrabold text-sm">"${disp}"</div>
+              <div class="font-mono-code text-[11px] text-zinc-800 mt-0.5">ID: ${cur.ids[i]}</div>
+            </div>`;
+        });
+        return `
+          <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="bg-[#ffd166] text-zinc-900 font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+                🧪 STAGE 1 LAB: INTERACTIVE BPE TOKENIZER INSPECTOR
+              </span>
+              <span class="text-xs text-zinc-300 font-bold">Click a test string to see how the LLM chops it into Token IDs:</span>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <button onclick="setEp1Sample('unbelievable')" class="comic-btn px-3.5 py-2 rounded-xl font-bold text-xs ${ep1TokenSample==='unbelievable' ? 'bg-[#ffd166] text-zinc-900' : 'bg-zinc-800 text-white'}">"unbelievable"</button>
+              <button onclick="setEp1Sample('strawberry')" class="comic-btn px-3.5 py-2 rounded-xl font-bold text-xs ${ep1TokenSample==='strawberry' ? 'bg-[#ffd166] text-zinc-900' : 'bg-zinc-800 text-white'}">🍓 "strawberry"</button>
+              <button onclick="setEp1Sample('riverbank')" class="comic-btn px-3.5 py-2 rounded-xl font-bold text-xs ${ep1TokenSample==='riverbank' ? 'bg-[#ffd166] text-zinc-900' : 'bg-zinc-800 text-white'}">"The bank by the river"</button>
+              <button onclick="setEp1Sample('python')" class="comic-btn px-3.5 py-2 rounded-xl font-bold text-xs ${ep1TokenSample==='python' ? 'bg-[#ffd166] text-zinc-900' : 'bg-zinc-800 text-white'}">🐍 "def calc_attn(Q, K):"</button>
+            </div>
+            <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 space-y-3">
+              <div class="flex flex-wrap items-center gap-2.5">${pills}</div>
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-zinc-700 text-xs">
+                <span class="font-mono-code text-amber-300">Compression: ${cur.bytes} UTF-8 bytes → ${cur.tokens.length} Tokens (${(cur.bytes/cur.tokens.length).toFixed(1)} chars/token)</span>
+                <span class="text-zinc-200 font-medium">${cur.insight}</span>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      if (epId === 2) {
+        const angleDeg = ep2RoPEPos * 28;
+        return `
+          <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="bg-[#a5f3fc] text-zinc-900 font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+                🧪 STAGE 2 LAB: EMBEDDING GEOMETRY &amp; RoPE POSITION ROTATOR
+              </span>
+              <span class="text-xs text-zinc-300 font-bold">Change the token seat position (m) to rotate its RoPE vector angle:</span>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <button onclick="setEp2Pos(1)" class="comic-btn px-3.5 py-2 rounded-xl font-bold text-xs ${ep2RoPEPos===1 ? 'bg-[#a5f3fc] text-zinc-900' : 'bg-zinc-800 text-white'}">Seat m = 1 ("The")</button>
+              <button onclick="setEp2Pos(2)" class="comic-btn px-3.5 py-2 rounded-xl font-bold text-xs ${ep2RoPEPos===2 ? 'bg-[#a5f3fc] text-zinc-900' : 'bg-zinc-800 text-white'}">Seat m = 2 (" bank")</button>
+              <button onclick="setEp2Pos(5)" class="comic-btn px-3.5 py-2 rounded-xl font-bold text-xs ${ep2RoPEPos===5 ? 'bg-[#a5f3fc] text-zinc-900' : 'bg-zinc-800 text-white'}">Seat m = 5 (" river")</button>
+              <button onclick="setEp2Pos(10)" class="comic-btn px-3.5 py-2 rounded-xl font-bold text-xs ${ep2RoPEPos===10 ? 'bg-[#a5f3fc] text-zinc-900' : 'bg-zinc-800 text-white'}">Seat m = 10 (Far Away)</button>
+            </div>
+            <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">RoPE Rotation Angle (m·θ_0)</div>
+                <div class="font-mono-code text-2xl text-amber-300 font-bold mt-1">m = ${ep2RoPEPos} → ${angleDeg}°</div>
+                <div class="text-xs text-emerald-400 font-mono-code mt-1">[cos(${angleDeg}°), -sin(${angleDeg}°)]</div>
+              </div>
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Relative Distance to Seat m=2 ("bank")</div>
+                <div class="font-mono-code text-lg text-white font-bold mt-1">|m - 2| = ${Math.abs(ep2RoPEPos - 2)} seats apart</div>
+                <div class="text-xs text-zinc-300">Dot product alignment: ${(Math.cos((ep2RoPEPos - 2) * 0.25)).toFixed(3)}</div>
+              </div>
+              <div class="text-xs sm:text-sm text-zinc-200">
+                Prof. Fei-Fei's Insight: RoPE doesn't change the length (norm) of the 4,096-D meaning vector—it purely rotates pairs of coordinates so attention scores naturally decay with distance!
+              </div>
+            </div>
+          </div>`;
+      }
+
+      if (epId === 3) {
+        const isRiver = ep3ContextMode === 'river';
+        return `
+          <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="bg-[#c084fc] text-zinc-900 font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+                🧪 STAGE 3 LAB: SELF-ATTENTION POLYSEMY SWITCHER ("BANK")
+              </span>
+              <span class="text-xs text-zinc-300 font-bold">Switch the surrounding sentence to watch Attention re-route "bank":</span>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <button onclick="setEp3Mode('river')" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm ${isRiver ? 'bg-[#86efac] text-zinc-900' : 'bg-zinc-800 text-white'}">🌊 Sentence A: "The bank by the river was..."</button>
+              <button onclick="setEp3Mode('loan')" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm ${!isRiver ? 'bg-[#ffd166] text-zinc-900' : 'bg-zinc-800 text-white'}">🏦 Sentence B: "The bank approved the loan..."</button>
+            </div>
+            <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Softmax(QK^T / √d_k) Weights on "bank"</div>
+                <div class="font-mono-code text-xs sm:text-sm text-amber-300 mt-1 space-y-1">
+                  <div>${isRiver ? '• "river" ➔ 0.68 (Strong Match!)' : '• "loan" ➔ 0.64 (Strong Match!)'}</div>
+                  <div>${isRiver ? '• "bank"  ➔ 0.22 (Self)' : '• "approved" ➔ 0.25 (Action)'}</div>
+                  <div>• "The"   ➔ 0.10 (Grammar)</div>
+                </div>
+              </div>
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Updated Vector Meaning of "bank"</div>
+                <div class="font-comic-title text-2xl mt-1 ${isRiver ? 'text-sky-400' : 'text-emerald-400'}">
+                  ${isRiver ? '🌊 Muddy River Shoreline' : '🏦 Financial Institution'}
+                </div>
+              </div>
+              <div class="text-xs sm:text-sm text-zinc-200">
+                Prof. Ranjay's Note: Before Layer 1, the token vector for "bank" was 100% identical in both sentences. Self-Attention dynamically constructs a scene graph connecting words in context!
+              </div>
+            </div>
+          </div>`;
+      }
+
+      if (epId === 4) {
+        const layers = {
+          1: {
+            title: "Layer 1 / 80 (Surface Syntax & Subword Stitching)",
+            topPred: 'Top Token Candidates: " the" (12%), " a" (9%), "," (8%)',
+            neuronRole: "Stitches split BPE subwords ('un'+'believ'+'able') back into whole words and identifies parts of speech (nouns, verbs)."
+          },
+          24: {
+            title: "Layer 24 / 80 (Entity Resolution & Coreference)",
+            topPred: 'Top Token Candidates: " water" (19%), " shore" (16%), " steep" (14%)',
+            neuronRole: "Links pronouns to entities and resolves that 'the bank by the river' refers to a geographical landform."
+          },
+          52: {
+            title: "Layer 52 / 80 (World Knowledge MLP Retrieval)",
+            topPred: 'Top Token Candidates: " muddy" (31%), " steep" (26%), " flooded" (19%)',
+            neuronRole: "SwiGLU Key-Value memory neurons fire on geographical riverbanks and inject physical attributes (mud, erosion, reeds) into the Residual Stream."
+          },
+          80: {
+            title: "Layer 80 / 80 (Final Next-Token Sharpening)",
+            topPred: 'Top Token Candidates: " muddy" (41%), " steep" (29%), " flooded" (18%)',
+            neuronRole: "Final layers rotate the residual stream vector into alignment with the exact Unembedding vocabulary token to be spoken next!"
+          }
+        };
+        const l = layers[ep4LayerProbe] || layers[80];
+        return `
+          <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="bg-[#06d6a0] text-zinc-900 font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+                🧪 STAGE 4 LAB: RESIDUAL STREAM &amp; LAYER-BY-LAYER LOGIT LENS
+              </span>
+              <span class="text-xs text-zinc-300 font-bold">Probe the token vector as it climbs from Layer 1 to Layer 80:</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+              <button onclick="setEp4Layer(1)" class="comic-btn p-2.5 rounded-xl font-bold text-xs ${ep4LayerProbe===1 ? 'bg-[#06d6a0] text-zinc-900' : 'bg-zinc-800 text-white'}">Floor 1 (Syntax)</button>
+              <button onclick="setEp4Layer(24)" class="comic-btn p-2.5 rounded-xl font-bold text-xs ${ep4LayerProbe===24 ? 'bg-[#06d6a0] text-zinc-900' : 'bg-zinc-800 text-white'}">Floor 24 (Context)</button>
+              <button onclick="setEp4Layer(52)" class="comic-btn p-2.5 rounded-xl font-bold text-xs ${ep4LayerProbe===52 ? 'bg-[#06d6a0] text-zinc-900' : 'bg-zinc-800 text-white'}">Floor 52 (MLP Facts)</button>
+              <button onclick="setEp4Layer(80)" class="comic-btn p-2.5 rounded-xl font-bold text-xs ${ep4LayerProbe===80 ? 'bg-[#ffd166] text-zinc-900' : 'bg-zinc-800 text-white'}">Floor 80 (Rooftop)</button>
+            </div>
+            <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div class="text-xs text-emerald-400 uppercase font-extrabold">${l.title}</div>
+                <div class="font-mono-code text-sm text-amber-300 font-bold mt-2">${l.topPred}</div>
+              </div>
+              <div class="text-xs sm:text-sm text-zinc-200 font-medium">${l.neuronRole}</div>
+            </div>
+          </div>`;
+      }
+
+      if (epId === 5) {
+        const memGb = ((ep5SeqLen / 8192) * 1.05).toFixed(2);
+        return `
+          <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="bg-[#fda4af] text-zinc-900 font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+                🧪 STAGE 5 LAB: KV CACHE SPEEDUP &amp; VRAM CALCULATOR
+              </span>
+              <span class="text-xs text-zinc-300 font-bold">Compare Decode with KV Cache ON vs. OFF across context lengths:</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+              <button onclick="toggleEp5Cache(true)" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs ${ep5KvCacheEnabled ? 'bg-[#06d6a0] text-zinc-900' : 'bg-zinc-800 text-white'}">⚡ KV Cache: ON (Standard)</button>
+              <button onclick="toggleEp5Cache(false)" class="comic-btn px-4 py-2 rounded-xl font-bold text-xs ${!ep5KvCacheEnabled ? 'bg-[#e11d48] text-white' : 'bg-zinc-800 text-white'}">🐢 KV Cache: OFF (Recompute All)</button>
+              <button onclick="setEp5Seq(4096)" class="comic-btn px-3 py-2 rounded-xl font-bold text-xs ${ep5SeqLen===4096 ? 'bg-amber-300 text-zinc-900' : 'bg-zinc-800 text-white'}">4K Context</button>
+              <button onclick="setEp5Seq(32768)" class="comic-btn px-3 py-2 rounded-xl font-bold text-xs ${ep5SeqLen===32768 ? 'bg-amber-300 text-zinc-900' : 'bg-zinc-800 text-white'}">32K Context</button>
+              <button onclick="setEp5Seq(131072)" class="comic-btn px-3 py-2 rounded-xl font-bold text-xs ${ep5SeqLen===131072 ? 'bg-amber-300 text-zinc-900' : 'bg-zinc-800 text-white'}">128K Context</button>
+            </div>
+            <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Time Per Generated Token (ITL)</div>
+                <div class="font-mono-code text-2xl font-bold mt-1 ${ep5KvCacheEnabled ? 'text-emerald-400' : 'text-red-400'}">
+                  ${ep5KvCacheEnabled ? '~16 ms / token' : `~${Math.round(ep5SeqLen * 0.45)} ms / token (SLOW!)`}
+                </div>
+              </div>
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">KV Cache GPU Memory (Llama-3-8B FP16)</div>
+                <div class="font-mono-code text-xl text-amber-300 font-bold mt-1">
+                  ${ep5KvCacheEnabled ? `${memGb} GB VRAM` : '0.00 GB (But GPU melts recomputing!)'}
+                </div>
+              </div>
+              <div class="text-xs sm:text-sm text-zinc-200">
+                ${ep5KvCacheEnabled ? `At ${ep5SeqLen.toLocaleString()} tokens, caching K & V makes each new word ~${Math.round((ep5SeqLen*0.45)/16)}× faster, trading GPU HBM capacity for massive compute savings!` : 'Without the KV Cache, generating every single word forces the GPU to re-run Prefill over all prior thousands of tokens!'}
+              </div>
+            </div>
+          </div>`;
+      }
+
+      if (epId === 6) {
+        // Compute live temperature-scaled softmax over 5 candidate tokens
+        const rawLogits = [
+          { word: "muddy", z: 4.2 },
+          { word: "steep", z: 3.7 },
+          { word: "flooded", z: 3.1 },
+          { word: "peaceful", z: 2.0 },
+          { word: "purple", z: -0.5 }
+        ];
+        let probs = [];
+        if (ep6Temp <= 0.05) {
+          probs = [100, 0, 0, 0, 0];
+        } else {
+          const exps = rawLogits.map(item => Math.exp(item.z / ep6Temp));
+          const sum = exps.reduce((a, b) => a + b, 0);
+          probs = exps.map(e => Math.round((e / sum) * 100));
+        }
+        let barsHtml = '';
+        let cum = 0;
+        rawLogits.forEach((item, idx) => {
+          const p = probs[idx];
+          const inNucleus = (cum / 100) < ep6TopP || idx === 0;
+          cum += p;
+          barsHtml += `
+            <div class="flex items-center gap-2 text-xs">
+              <span class="font-mono-code w-20 font-bold ${inNucleus ? 'text-amber-300' : 'text-zinc-500 line-through'}">"${item.word}"</span>
+              <div class="flex-grow bg-zinc-900 h-5 rounded overflow-hidden border border-zinc-700">
+                <div class="h-full ${inNucleus ? 'bg-[#06d6a0]' : 'bg-zinc-600'}" style="width:${Math.max(p, 2)}%"></div>
+              </div>
+              <span class="font-mono-code w-12 text-right">${p}%</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded ${inNucleus ? 'bg-emerald-900 text-emerald-300' : 'bg-zinc-900 text-zinc-500'}">${inNucleus ? 'IN TOP-P' : 'PRUNED'}</span>
+            </div>`;
+        });
+
+        return `
+          <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="bg-[#6366f1] text-white font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+                🧪 STAGE 6 LAB: LIVE TEMPERATURE (T) &amp; TOP-P SAMPLING MACHINE
+              </span>
+              <span class="text-xs text-zinc-300 font-bold">Adjust Temperature &amp; Top-p and roll the dice:</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+              <button onclick="setEp6Params(0.0, 1.0)" class="comic-btn px-3 py-1.5 rounded-xl font-bold text-xs ${ep6Temp===0.0 ? 'bg-amber-300 text-zinc-900' : 'bg-zinc-800 text-white'}">🧊 T = 0.0 (Greedy)</button>
+              <button onclick="setEp6Params(0.7, 0.9)" class="comic-btn px-3 py-1.5 rounded-xl font-bold text-xs ${ep6Temp===0.7 ? 'bg-amber-300 text-zinc-900' : 'bg-zinc-800 text-white'}">✨ T = 0.7, Top-p = 0.9 (Balanced)</button>
+              <button onclick="setEp6Params(1.6, 1.0)" class="comic-btn px-3 py-1.5 rounded-xl font-bold text-xs ${ep6Temp===1.6 ? 'bg-amber-300 text-zinc-900' : 'bg-zinc-800 text-white'}">🔥 T = 1.6 (Wild Creative)</button>
+              <button onclick="sampleEp6Token()" class="comic-btn px-4 py-1.5 rounded-xl font-comic-title text-lg bg-[#06d6a0] text-zinc-900">🎲 Roll Loaded Dice!</button>
+            </div>
+            <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+              <div class="md:col-span-8 space-y-2">
+                ${barsHtml}
+              </div>
+              <div class="md:col-span-4 bg-zinc-900 p-4 rounded-xl border border-zinc-700 text-center">
+                <div class="text-xs text-zinc-400 uppercase font-bold">Sampled Next Token</div>
+                <div class="font-mono-code text-2xl text-amber-300 font-bold mt-2">"${ep6PickedWord || 'muddy'}"</div>
+                <div class="text-[11px] text-zinc-400 mt-1">T = ${ep6Temp} • Top-p = ${ep6TopP}</div>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      // Stage 7 Finale Lab: Autoregressive Loop & Chain-of-Thought Simulator
+      const generatedTokens = [" muddy", " and", " full", " of", " smooth", " river", " stones", ".", " <|eot_id|>"];
+      const shownTokens = generatedTokens.slice(0, ep7StepCount).join("");
+      return `
+        <div class="comic-box bg-zinc-900 text-white rounded-2xl p-5 mt-6">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <span class="bg-[#10b981] text-zinc-900 font-comic-title text-lg px-3 py-0.5 rounded border border-white">
+              🧪 STAGE 7 LAB: AUTOREGRESSIVE LOOP &amp; CHAIN-OF-THOUGHT STEPPER
+            </span>
+            <span class="text-xs text-amber-300 font-mono-code font-bold">Decode Step: ${ep7StepCount} / ${generatedTokens.length}</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 mb-4">
+            <button onclick="stepEp7Loop(1)" class="comic-btn bg-[#ffd166] hover:bg-amber-300 text-zinc-900 font-comic-title text-lg px-4 py-2 rounded-xl">
+              ➕ Step +1 Token (Append &amp; Decode)
+            </button>
+            <button onclick="stepEp7Loop(99)" class="comic-btn bg-[#06d6a0] hover:bg-emerald-400 text-zinc-900 font-bold text-xs px-4 py-2 rounded-xl">
+              ⏩ Complete Until &lt;|eot_id|&gt;
+            </button>
+            <button onclick="stepEp7Loop(-99)" class="comic-btn bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs px-3 py-2 rounded-xl">
+              ↺ Reset Loop
+            </button>
+            <button onclick="toggleEp7CoT()" class="comic-btn bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs px-3 py-2 rounded-xl">
+              🧠 Scratchpad (&lt;think&gt;): ${ep7UseCoT ? 'ON' : 'OFF'}
+            </button>
+          </div>
+          <div class="bg-zinc-800 rounded-xl p-4 border-2 border-zinc-600 space-y-3">
+            ${ep7UseCoT ? `<div class="bg-zinc-900/90 text-amber-200 font-mono-code text-xs p-3 rounded-lg border border-amber-500/40">&lt;think&gt; User prompt ends with "The bank by the river was". Self-attention bound "bank" to "river" (shoreline). Selecting descriptive sensory adjectives... &lt;/think&gt;</div>` : ''}
+            <div class="font-mono-code text-sm sm:text-base">
+              <span class="text-zinc-400">The bank by the river was</span><span class="text-emerald-400 font-bold">${shownTokens}</span>
+            </div>
+            <div class="text-xs text-zinc-300 border-t border-zinc-700 pt-2">
+              ${ep7StepCount >= generatedTokens.length ? '🎉 Stop token <|eot_id|> sampled! The autoregressive loop terminates and returns the final answer to the user.' : `At Step ${ep7StepCount}, the newly sampled token is appended to the right of the sequence and its K/V vectors are added to the KV Cache for Step ${ep7StepCount + 1}!`}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // =========================================================================
+    // RENDER LIVE END-TO-END TRACER & COMIC PANELS
+    // =========================================================================
+    function renderLivePipelineTracer() {
+      const box = document.getElementById('livePipelineTracerDisplay');
+      const cur = TRACE_PROMPTS[activeTracePromptIdx] || TRACE_PROMPTS[0];
+      for (let i = 0; i < 3; i++) {
+        const btn = document.getElementById('tracePromptBtn' + i);
+        if (btn) {
+          btn.className = i === activeTracePromptIdx
+            ? 'px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition bg-amber-300 text-zinc-900 border-white'
+            : 'px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition bg-zinc-800 text-white border-zinc-600 hover:bg-zinc-700';
+        }
+      }
+
+      const steps = [
+        { num: "1. Tokenize", color: "border-amber-400", text: cur.s1_tokens, ep: 1 },
+        { num: "2. Embed+RoPE", color: "border-sky-400", text: cur.s2_embed, ep: 2 },
+        { num: "3. Attention", color: "border-purple-400", text: cur.s3_attn, ep: 3 },
+        { num: "4. MLP Vault", color: "border-emerald-400", text: cur.s4_mlp, ep: 4 },
+        { num: "5. KV Cache", color: "border-rose-400", text: cur.s5_kv, ep: 5 },
+        { num: "6. Softmax", color: "border-indigo-400", text: cur.s6_logits, ep: 6 },
+        { num: "7. Output!", color: "border-green-400", text: cur.s7_output, ep: 7 }
+      ];
+
+      box.innerHTML = steps.map(s => `
+        <button onclick="selectEpisode(${s.ep})" class="text-left bg-zinc-800 hover:bg-zinc-700 p-3 rounded-xl border-l-4 ${s.color} transition flex flex-col justify-between">
+          <div class="font-comic-title text-sm text-amber-300 tracking-wide">${s.num}</div>
+          <div class="font-mono-code text-[11px] text-zinc-100 mt-1 leading-snug">${s.text}</div>
+        </button>
+      `).join('');
+    }
+
+    function selectLiveTracePrompt(idx) {
+      activeTracePromptIdx = idx;
+      renderLivePipelineTracer();
+    }
+
+    function renderNavigationAndCover() {
+      const drawerGrid = document.getElementById('drawerEpisodeGrid');
+      const coverCards = document.getElementById('coverEpisodeCards');
+      const pillBar = document.getElementById('episodePillBar');
+
+      let drawerHtml = `
+        <button onclick="selectEpisode(0); toggleEpisodesDrawer();" class="p-2.5 rounded-lg border-2 text-left transition ${currentEpisode===0 && !readAllMode ? 'bg-amber-300 text-zinc-900 border-white font-extrabold' : 'bg-zinc-800 text-white border-zinc-700 hover:bg-zinc-700'}">
+          <div class="text-[10px] uppercase opacity-75">Overview</div>
+          <div class="font-comic-title text-base">🏠 Cover Page</div>
+        </button>`;
+
+      let coverHtml = '';
+      let pillsHtml = `
+        <button onclick="selectEpisode(0)" class="px-3 py-1.5 rounded-lg text-xs font-extrabold border-2 border-zinc-900 transition ${currentEpisode===0 && !readAllMode ? 'bg-zinc-900 text-amber-300' : 'bg-zinc-100 hover:bg-amber-100 text-zinc-900'}">
+          🏠 Cover
+        </button>`;
+
+      EPISODES.forEach(ep => {
+        const isActive = (!readAllMode && currentEpisode === ep.id);
+        drawerHtml += `
+          <button onclick="selectEpisode(${ep.id}); toggleEpisodesDrawer();" class="p-2.5 rounded-lg border-2 text-left transition ${isActive ? 'bg-[#4f46e5] text-white border-white font-extrabold' : 'bg-zinc-800 text-white border-zinc-700 hover:bg-zinc-700'}">
+            <div class="text-[10px] uppercase text-amber-300 font-bold">${ep.badge}</div>
+            <div class="font-bold text-xs truncate">${ep.title}</div>
+          </button>`;
+
+        coverHtml += `
+          <button onclick="selectEpisode(${ep.id})" class="comic-btn bg-white hover:bg-amber-50 text-left p-4 rounded-xl flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-extrabold px-2 py-0.5 rounded border border-zinc-900" style="background:${ep.color}">${ep.badge}</span>
+                <span class="text-[11px] font-bold text-zinc-500">ELI5 → Math + Lab</span>
+              </div>
+              <h3 class="font-comic-title text-xl text-zinc-900 mt-2">${ep.title}</h3>
+              <p class="text-xs text-zinc-700 font-medium mt-1">${ep.teaser}</p>
+            </div>
+            <div class="mt-3 text-xs font-extrabold text-[#4f46e5] flex items-center gap-1">
+              Explore ${ep.badge} →
+            </div>
+          </button>`;
+
+        pillsHtml += `
+          <button onclick="selectEpisode(${ep.id})" class="px-3 py-1.5 rounded-lg text-xs font-extrabold border-2 border-zinc-900 transition ${isActive ? 'bg-[#4f46e5] text-white shadow-[2px_2px_0px_#18181b]' : 'bg-white hover:bg-amber-100 text-zinc-900'}">
+            Stage ${ep.id}
+          </button>`;
+      });
+
+      drawerGrid.innerHTML = drawerHtml;
+      coverCards.innerHTML = coverHtml;
+      pillBar.innerHTML = pillsHtml;
+
+      const badgeEl = document.getElementById('currentEpBadge');
+      if (readAllMode) {
+        badgeEl.textContent = 'All 1–7';
+      } else if (currentEpisode === 0) {
+        badgeEl.textContent = 'Cover';
+      } else {
+        badgeEl.textContent = 'Stage ' + currentEpisode;
+      }
+
+      const coverSec = document.getElementById('coverHeroSection');
+      if (currentEpisode === 0 || readAllMode) {
+        coverSec.classList.remove('hidden');
+      } else {
+        coverSec.classList.add('hidden');
+      }
+    }
+
+    function renderPanelNoteByDepth(p) {
+      if (depthMode === 'eli5') {
+        return `<div class="mt-3 bg-amber-100 text-zinc-900 text-xs p-2.5 rounded-lg border-2 border-zinc-900 font-bold leading-snug">${p.noteEli5}</div>`;
+      }
+      if (depthMode === 'undergrad') {
+        return `<div class="mt-3 bg-sky-100 text-zinc-900 text-xs p-2.5 rounded-lg border-2 border-zinc-900 font-bold leading-snug">${p.noteUndergrad}</div>`;
+      }
+      if (depthMode === 'adv') {
+        return `<div class="mt-3 bg-zinc-900 text-emerald-300 font-mono-code text-xs p-2.5 rounded-lg border-2 border-zinc-900 leading-snug">${p.noteAdv}</div>`;
+      }
+      // 'all' mode shows all 3!
+      return `
+        <div class="mt-3 space-y-1.5 text-xs">
+          <div class="bg-amber-100 text-zinc-900 p-2 rounded border border-zinc-900 font-bold">${p.noteEli5}</div>
+          <div class="bg-sky-100 text-zinc-900 p-2 rounded border border-zinc-900 font-bold">${p.noteUndergrad}</div>
+          <div class="bg-zinc-900 text-emerald-300 font-mono-code p-2 rounded border border-zinc-900">${p.noteAdv}</div>
+        </div>`;
+    }
+
+    function renderEpisodeDepthCards(ep) {
+      const cardEli5 = `
+        <div class="comic-box-sm bg-[#fff8e6] rounded-xl p-4 ${depthMode === 'eli5' ? 'ring-4 ring-amber-400' : ''}">
+          <div class="text-xs font-extrabold uppercase text-amber-900">🎈 Level 1: ELI5 Layman Intuition</div>
+          <p class="text-sm font-medium text-zinc-800 mt-1.5 leading-relaxed">${ep.eli5}</p>
+        </div>`;
+      const cardUndergrad = `
+        <div class="comic-box-sm bg-[#e0f2fe] rounded-xl p-4 ${depthMode === 'undergrad' ? 'ring-4 ring-sky-400' : ''}">
+          <div class="text-xs font-extrabold uppercase text-sky-900">🎓 Level 2: Stanford CS231n / UW CSE Lecture Notes</div>
+          <p class="text-sm font-medium text-zinc-800 mt-1.5 leading-relaxed">${ep.undergrad}</p>
+        </div>`;
+      const cardAdv = `
+        <div class="comic-box-sm bg-zinc-900 text-white rounded-xl p-4 ${depthMode === 'adv' ? 'ring-4 ring-indigo-400' : ''}">
+          <div class="text-xs font-extrabold uppercase text-emerald-400">🔬 Level 3: Frontier Tensor Math &amp; Systems Architecture</div>
+          <p class="text-xs sm:text-sm font-mono-code text-zinc-200 mt-1.5 leading-relaxed">${ep.adv}</p>
+        </div>`;
+
+      if (depthMode === 'eli5') return `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">${cardEli5}${cardUndergrad}${cardAdv}</div>`;
+      if (depthMode === 'undergrad') return `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">${cardUndergrad}${cardEli5}${cardAdv}</div>`;
+      if (depthMode === 'adv') return `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">${cardAdv}${cardUndergrad}${cardEli5}</div>`;
+      return `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">${cardEli5}${cardUndergrad}${cardAdv}</div>`;
+    }
+
+    function renderComicEpisodes() {
+      const container = document.getElementById('comicEpisodesContainer');
+      const episodesToShow = readAllMode
+        ? EPISODES
+        : (currentEpisode === 0 ? [EPISODES[0]] : EPISODES.filter(e => e.id === currentEpisode));
+
+      let html = '';
+      episodesToShow.forEach(ep => {
+        let panelsHtml = '';
+        ep.panels.forEach((p, idx) => {
+          let bubblesHtml = '';
+          p.bubbles.forEach(b => {
+            const tailClass = b.pos === 'right' ? 'tail-right ml-auto' : 'mr-auto';
+            bubblesHtml += `
+              <div class="speech-bubble ${tailClass} max-w-[94%]">
+                <span class="inline-block text-[10px] font-sans font-extrabold uppercase tracking-wider px-1.5 py-0.2 rounded bg-zinc-900 text-amber-300 mr-1">${b.speaker}:</span>
+                <span>${b.text}</span>
+              </div>`;
+          });
+
+          panelsHtml += `
+            <div class="${p.span} comic-box ${p.bg} rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden">
+              <div class="halftone-bg absolute inset-0 pointer-events-none"></div>
+              <div class="relative z-10 space-y-3">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="narrator-box bg-white text-zinc-900 rounded-md">
+                    <span class="text-xs font-extrabold text-[#4f46e5] mr-1">#${idx + 1}</span> ${p.captionTop}
+                  </div>
+                  <span class="sfx-badge ${p.sfxColor} text-sm sm:text-base px-2.5 py-0.5 rounded shrink-0 animate-sfx">
+                    ${p.sfx}
+                  </span>
+                </div>
+                <div class="my-2 bg-white/85 rounded-xl p-2 border-2 border-zinc-900">
+                  ${getComicSvg(p.svgType)}
+                </div>
+                <div class="space-y-2.5 pt-1">
+                  ${bubblesHtml}
+                </div>
+              </div>
+              <div class="relative z-10">
+                ${renderPanelNoteByDepth(p)}
+              </div>
+            </div>`;
+        });
+
+        html += `
+          <article id="episode-section-${ep.id}" class="space-y-6">
+            <div class="comic-box rounded-2xl p-5 sm:p-6 bg-white relative overflow-hidden">
+              <div class="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div class="inline-flex items-center gap-2">
+                    <span class="font-comic-title text-xl px-3 py-0.5 rounded border-2 border-zinc-900" style="background:${ep.color}">${ep.badge}</span>
+                    <span class="text-xs font-extrabold uppercase text-zinc-500">How LLMs Work • Prompt to Final Answer</span>
+                  </div>
+                  <h2 class="font-comic-title text-3xl sm:text-5xl text-zinc-900 mt-1">${ep.title}</h2>
+                  <p class="text-sm sm:text-base font-bold text-zinc-700">${ep.subtitle}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Comic Panels -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              ${panelsHtml}
+            </div>
+
+            <!-- 3-Level Pedagogical Study Cards (ELI5 + Undergrad + Frontier Math) -->
+            ${renderEpisodeDepthCards(ep)}
+
+            <!-- Interactive Tensor Lab -->
+            ${renderEpisodeLab(ep.id)}
+          </article>`;
+      });
+
+      container.innerHTML = html;
+      updateBottomPager();
+    }
+
+    function updateBottomPager() {
+      const prevBtn = document.getElementById('prevEpBtn');
+      const nextBtn = document.getElementById('nextEpBtn');
+      const titleEl = document.getElementById('pagerEpTitle');
+      const teaserEl = document.getElementById('pagerEpTeaser');
+
+      if (readAllMode) {
+        titleEl.textContent = "You're Viewing All 7 Stages (Prompt to Answer)!";
+        teaserEl.textContent = "Ready to deploy this interactive study guide on your GitHub Pages?";
+        prevBtn.textContent = "🏠 Back to Cover";
+        nextBtn.textContent = "🚀 Host on GitHub Pages →";
+        return;
+      }
+
+      const activeEp = currentEpisode === 0 ? 1 : currentEpisode;
+      const epObj = EPISODES.find(e => e.id === activeEp);
+      titleEl.textContent = `${epObj.badge}: ${epObj.title}`;
+      teaserEl.textContent = activeEp < 7
+        ? `Up Next — ${EPISODES[activeEp].badge}: ${EPISODES[activeEp].title}`
+        : `You mastered the entire LLM pipeline! Ready to deploy it to GitHub Pages?`;
+
+      prevBtn.textContent = currentEpisode <= 1 ? "🏠 Cover Page" : `← Stage ${activeEp - 1}`;
+      nextBtn.textContent = activeEp < 7 ? `Next: ${EPISODES[activeEp].badge} →` : "🚀 Host on GitHub Pages →";
+    }
+
+    // =========================================================================
+    // DEPTH MODE & QUIZ HANDLERS
+    // =========================================================================
+    function setDepthMode(mode) {
+      depthMode = mode;
+      const mapping = {
+        eli5: { id: 'depthBtnEli5', label: 'Active Lens: 🎈 ELI5 Intuition' },
+        undergrad: { id: 'depthBtnUndergrad', label: 'Active Lens: 🎓 CS231n / UW Lecture' },
+        adv: { id: 'depthBtnAdv', label: 'Active Lens: 🔬 Frontier Tensor Math' },
+        all: { id: 'depthBtnAll', label: 'Active Lens: 📚 All 3 Depths Side-by-Side' }
+      };
+      ['depthBtnEli5', 'depthBtnUndergrad', 'depthBtnAdv', 'depthBtnAll'].forEach(btnId => {
+        const el = document.getElementById(btnId);
+        if (el) {
+          el.className = (mapping[mode].id === btnId)
+            ? 'px-2.5 py-1 rounded-lg text-xs font-extrabold transition bg-amber-300 text-zinc-900'
+            : 'px-2.5 py-1 rounded-lg text-xs font-extrabold transition text-zinc-300 hover:text-white';
+        }
+      });
+      document.getElementById('activeDepthBadge').textContent = mapping[mode].label;
+      renderComicEpisodes();
+      showToast('🎚️', mapping[mode].label);
+    }
+
+    function renderQuiz() {
+      const grid = document.getElementById('quizQuestionsGrid');
+      let score = 0;
+      let html = '';
+
+      QUIZ_QUESTIONS.forEach((item, qIdx) => {
+        const picked = quizAnswers[qIdx];
+        if (picked === item.correct) score++;
+
+        let optsHtml = '';
+        item.options.forEach((opt, oIdx) => {
+          let btnStyle = 'bg-white hover:bg-indigo-50 text-zinc-900 border-zinc-900';
+          if (picked !== undefined) {
+            if (oIdx === item.correct) {
+              btnStyle = 'bg-[#86efac] text-zinc-900 border-zinc-900 font-extrabold';
+            } else if (oIdx === picked) {
+              btnStyle = 'bg-[#fda4af] text-zinc-900 border-zinc-900 line-through';
+            }
+          }
+          optsHtml += `
+            <button onclick="answerQuiz(${qIdx}, ${oIdx})" class="w-full text-left text-xs sm:text-sm p-2.5 rounded-lg border-2 transition ${btnStyle}">
+              ${opt}
+            </button>`;
+        });
+
+        const feedbackHtml = picked !== undefined ? `
+          <div class="mt-2 text-xs p-2 rounded border border-zinc-900 ${picked === item.correct ? 'bg-emerald-100 text-zinc-900' : 'bg-amber-100 text-zinc-900'}">
+            <strong>${picked === item.correct ? '✅ Spot on!' : '💡 Hint:'}</strong> ${item.explanation}
+          </div>` : '';
+
+        html += `
+          <div class="bg-white p-4 rounded-xl border-2 border-zinc-900 flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-sm text-zinc-900 mb-2.5">${item.q}</div>
+              <div class="space-y-1.5">${optsHtml}</div>
+            </div>
+            ${feedbackHtml}
+          </div>`;
+      });
+
+      grid.innerHTML = html;
+      document.getElementById('quizScoreDisplay').textContent = `${score} / ${QUIZ_QUESTIONS.length}`;
+    }
+
+    function answerQuiz(qIdx, oIdx) {
+      quizAnswers[qIdx] = oIdx;
+      renderQuiz();
+    }
+
+    function scrollToQuiz() {
+      const el = document.getElementById('comicQuizBox');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // =========================================================================
+    // LAB INTERACTION SETTERS
+    // =========================================================================
+    function setEp1Sample(s) { ep1TokenSample = s; renderComicEpisodes(); }
+    function setEp2Pos(m) { ep2RoPEPos = m; renderComicEpisodes(); }
+    function setEp3Mode(m) { ep3ContextMode = m; renderComicEpisodes(); }
+    function setEp4Layer(l) { ep4LayerProbe = l; renderComicEpisodes(); }
+    function toggleEp5Cache(val) { ep5KvCacheEnabled = val; renderComicEpisodes(); }
+    function setEp5Seq(s) { ep5SeqLen = s; renderComicEpisodes(); }
+    function setEp6Params(t, p) { ep6Temp = t; ep6TopP = p; renderComicEpisodes(); }
+    function sampleEp6Token() {
+      const pool = ep6Temp === 0.0 ? ["muddy"] : (ep6Temp > 1.2 ? ["muddy", "steep", "flooded", "peaceful", "purple"] : ["muddy", "steep", "flooded"]);
+      ep6PickedWord = pool[Math.floor(Math.random() * pool.length)];
+      renderComicEpisodes();
+      showToast('🎲', `Sampled next token: "${ep6PickedWord}" (T=${ep6Temp}, Top-p=${ep6TopP})`);
+    }
+    function stepEp7Loop(delta) {
+      if (delta === -99) ep7StepCount = 1;
+      else if (delta === 99) ep7StepCount = 9;
+      else ep7StepCount = Math.min(9, ep7StepCount + delta);
+      renderComicEpisodes();
+    }
+    function toggleEp7CoT() {
+      ep7UseCoT = !ep7UseCoT;
+      renderComicEpisodes();
+    }
+
+    // =========================================================================
+    // VIEW & NAVIGATION CONTROLLERS
+    // =========================================================================
+    function switchMainView(view) {
+      currentView = view;
+      const comicEl = document.getElementById('viewComic');
+      const githubEl = document.getElementById('viewGithub');
+      if (view === 'github') {
+        comicEl.classList.add('hidden');
+        githubEl.classList.remove('hidden');
+        updateGithubConfig();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        githubEl.classList.add('hidden');
+        comicEl.classList.remove('hidden');
+        renderNavigationAndCover();
+        renderComicEpisodes();
+      }
+    }
+
+    function selectEpisode(epNum) {
+      readAllMode = false;
+      currentEpisode = epNum;
+      try {
+        history.replaceState(null, '', epNum === 0 ? '#cover' : '#stage' + epNum);
+      } catch (e) {}
+      switchMainView('comic');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function enableReadAllMode() {
+      readAllMode = true;
+      currentEpisode = 1;
+      switchMainView('comic');
+      showToast('📜', 'Continuous Full-Pipeline Mode enabled! Scroll through all 7 stages.');
+    }
+
+    function stepEpisode(delta) {
+      if (readAllMode) {
+        if (delta < 0) selectEpisode(0);
+        else switchMainView('github');
+        return;
+      }
+      const activeEp = currentEpisode === 0 ? 1 : currentEpisode;
+      if (delta < 0) {
+        if (currentEpisode <= 1) selectEpisode(0);
+        else selectEpisode(activeEp - 1);
+      } else {
+        if (activeEp < 7) selectEpisode(activeEp + 1);
+        else switchMainView('github');
+      }
+    }
+
+    function toggleEpisodesDrawer() {
+      const dr = document.getElementById('episodesDrawer');
+      dr.classList.toggle('hidden');
+    }
+
+    // =========================================================================
+    // GITHUB PAGES EXPORT & CUSTOMIZER
+    // =========================================================================
+    function updateGithubConfig() {
+      const author = (document.getElementById('inputAuthorName').value || 'Nishant Rai').trim();
+      const user = (document.getElementById('inputGithubUser').value || 'iamnishantrai').trim().toLowerCase().replace(/\s+/g, '');
+      const repo = (document.getElementById('inputRepoName').value || 'how-llms-work').trim().toLowerCase().replace(/\s+/g, '-');
+
+      document.getElementById('authorHeroName').textContent = author;
+      document.getElementById('footerAuthorName').textContent = author.toUpperCase();
+      document.getElementById('livePagesUrlPreview').textContent = `https://${user}.github.io/${repo}/`;
+      document.getElementById('stepRepoName1').textContent = repo;
+
+      const gitBlock = `# Inside your ${user}.github.io repository:
+mkdir -p ${repo}
+mv ~/Downloads/index.html ${repo}/index.html
+git add ${repo}/index.html
+git commit -m "Launch How LLMs Work interactive comic by ${author}"
+git push origin main`;
+      document.getElementById('gitCommandsBlock').textContent = gitBlock;
+    }
+
+    function copyGitCommands() {
+      const code = document.getElementById('gitCommandsBlock').textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => showToast('📋', 'Copied Git commands!')).catch(() => fallbackCopy(code));
+      } else {
+        fallbackCopy(code);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('📋', 'Copied Git commands!');
+      } catch (e) {}
+      document.body.removeChild(ta);
+    }
+
+    function downloadStandaloneIndexHtml() {
+      const author = (document.getElementById('inputAuthorName').value || 'Nishant Rai').trim();
+      const docClone = document.documentElement.outerHTML
+        .replace(/Nishant Rai/g, author)
+        .replace(/NISHANT RAI/g, author.toUpperCase());
+      const fullHtml = '<!DOCTYPE html>\n' + docClone;
+      const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'index.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('⬇️', `Downloaded index.html ready for GitHub Pages!`);
+    }
+
+    function downloadReadmeMd() {
+      const author = (document.getElementById('inputAuthorName').value || 'Nishant Rai').trim();
+      const user = (document.getElementById('inputGithubUser').value || 'iamnishantrai').trim().toLowerCase();
+      const repo = (document.getElementById('inputRepoName').value || 'how-llms-work').trim().toLowerCase();
+      const md = `# 🧠 How LLMs Work (From Prompt to Final Answer) — An Interactive Comic & Study Guide
+
+**Handmade by ${author}**  
+🌐 **Live URL:** [https://${user}.github.io/${repo}/](https://${user}.github.io/${repo}/)
+
+Designed in the spirit of Stanford CS231n (Prof. Fei-Fei Li) and UW CSE 493G1 (Prof. Ranjay Krishna) with the visual comic charm of [howdns.works](https://howdns.works/), this interactive single-file web application explains every stage of a modern Large Language Model at 3 switchable depths (**ELI5**, **CS Lecture**, and **Frontier Tensor Math**).
+`;
+      const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'README.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('⬇️', 'Downloaded README.md!');
+    }
+
+    let toastTimer = null;
+    function showToast(icon, text) {
+      const t = document.getElementById('comicToast');
+      document.getElementById('comicToastIcon').textContent = icon;
+      document.getElementById('comicToastText').textContent = text;
+      t.classList.remove('hidden');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.add('hidden'), 3400);
+    }
+
+    function syncFromHash() {
+      const h = (window.location.hash || '').toLowerCase();
+      if (h.startsWith('#stage')) {
+        const n = parseInt(h.replace('#stage', ''), 10);
+        if (n >= 1 && n <= 7) {
+          readAllMode = false;
+          currentEpisode = n;
+        }
+      }
+    }
+
+    window.addEventListener('hashchange', function() {
+      syncFromHash();
+      renderNavigationAndCover();
+      renderComicEpisodes();
+    });
+
+    window.onload = function() {
+      syncFromHash();
+      renderLivePipelineTracer();
+      renderNavigationAndCover();
+      renderComicEpisodes();
+      renderQuiz();
+      updateGithubConfig();
+    };
+  </script>
+</body>
+</html>
